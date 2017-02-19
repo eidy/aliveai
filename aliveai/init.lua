@@ -7,8 +7,9 @@ aliveai={
 	max_num=50,			--max bots
 	max_num_by_self=7,		--max spawned bots by self
 	max_num_by_self_monsters=12,	--max spawned monsters by self
-	get_everything_to_build_chance=100,
+	get_everything_to_build_chance=50,
 	lifetimer=60,			--remove unbehavior none nps's
+	max_paths_per_s={timer=0,times=10,checked=0},
 	msg={},				--messages to bots
 	registered_bots={},		--registered_bots
 	active={},			--active bots
@@ -33,6 +34,14 @@ aliveai={
 		}
 	},
 }
+
+minetest.register_globalstep(function(dtime)
+	aliveai.max_paths_per_s.timer=aliveai.max_paths_per_s.timer+dtime
+	if aliveai.max_paths_per_s.timer> 1 then
+		aliveai.max_paths_per_s.timer=0
+		aliveai.max_paths_per_s.checked=0
+	end
+end)
 
 dofile(minetest.get_modpath("aliveai") .. "/base.lua")
 dofile(minetest.get_modpath("aliveai") .. "/event.lua")

@@ -49,6 +49,8 @@ end
 
 
 aliveai.creatpath=function(self,pos1,pos2,d,notadvanced)
+	aliveai.max_paths_per_s.checked=aliveai.max_paths_per_s.checked+1
+	if aliveai.max_paths_per_s.checked>aliveai.max_paths_per_s.times then return nil end
 	pos1=aliveai.roundpos(pos1)
 	pos2=aliveai.roundpos(pos2)
 	d=d or self.distance
@@ -535,9 +537,9 @@ aliveai.falling=function(self)
 	pos.y=pos.y-1
 	local node=minetest.get_node(pos)
 -- if unknown
-	if not node or not node2 then return nil end
-	local test=minetest.registered_nodes[node.name]
 	local test2=minetest.registered_nodes[node2.name]
+	local test=minetest.registered_nodes[node.name]
+	if not test or not test2 then return nil end
 --water
 	if test2.liquid_viscosity>0 then
 		self.floating=true
@@ -548,13 +550,15 @@ aliveai.falling=function(self)
 			return self
 		end
 			self.object:setvelocity({x = self.move.x, y =1 - (test2.liquid_viscosity*0.1), z =self.move.z})
-		if not self.air then self.air=0 end
 		if test.drowning and not self.drown then
 			self.drown=true
-		elseif self.air>=20 then
+			self.air=0
+		elseif self.air and self.air>=20 then
 			aliveai.punch(self,self.object,1)
+		elseif self.air then
+			self.air=self.air+0.1
+
 		end
-		self.air=self.air+0.1
 		return self
 -- ladder
 	elseif test.climbable then
@@ -594,7 +598,7 @@ aliveai.falling=function(self)
 		end
 		self.floating=nil
 		self.object:setacceleration({x=0,y=-10,z =0})
-	elseif test.drowning and test.drowning>0 and self.drowning then
+	elseif test2.drowning>0 and self.drowning then
 		if not self.air then
 			self.drown=true
 			self.air=0
@@ -1051,7 +1055,7 @@ function aliveai.max(self,update)
 	local c=0
 	for i in pairs(aliveai.active) do
 		c=c+1
-		if not aliveai.active[i] or aliveai.active[i]:get_luaentity()==nil or not aliveai.active[i]:get_hp() or aliveai.active[i]:get_hp()<=0 then
+		if not aliveai.active[i] or not aliveai.active[i]:get_luaentity() or not aliveai.active[i]:get_hp() or aliveai.active[i]:get_hp()<=0 then
 			table.remove(aliveai.active,c)
 			c=c-1
 		end

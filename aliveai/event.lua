@@ -1,3 +1,59 @@
+aliveai.need_helper=function(self)
+	if self.help_need then
+		if self.done=="come" then
+			self.done=""
+			if not self.help_need:get_luaentity() or aliveai.gethp(self.help_need)<=0 then self.help_need=nil return end
+			for item, n in pairs(self.inv) do
+				if not minetest.registered_tools[item] then
+					aliveai.invadd(self.help_need:get_luaentity(),item,n)
+					aliveai.invadd(self,item,-n)
+				end	
+			end
+			aliveai.showstatus(self,"gave " .. self.help_need:get_luaentity().botname .." stuff",3)
+			aliveai.known(self,self.help_need,"member")
+			self.help_need=nil
+			return self
+		end
+		return
+	end
+	if self.coming~=1 or self.building~=1 or math.random(1,50)~=1 then return end
+	aliveai.max(self,true)
+	local pos=self.object:getpos()
+	local self_inv=0
+	local ob_inv=0
+	local give
+	local ob2
+
+	for item, n in pairs(self.inv) do
+		if not minetest.registered_tools[item] then
+			self_inv=self_inv+n
+		end
+	end
+	if self_inv<10 then return end
+	for i, ob in pairs(aliveai.active) do
+		ob2=ob:get_luaentity()
+		if ob2 and ob2.need and ob2.building==1 and ob2.botname~=self.botname and ob2.team==self.team and aliveai.distance(self,ob2.object:getpos())<self.distance*3 then
+			local inv=0
+			for item, n in pairs(ob2.inv) do
+				inv=inv+n
+			end
+			if inv>ob_inv then
+				ob_inv=inv
+				give=ob
+			end
+		end
+	end
+	if ob_inv>self_inv and give then
+		self.help_need=give
+		self.come=give
+		self.zeal=5
+		aliveai.showstatus(self,"give " .. give:get_luaentity().botname .." stuff")
+		return self
+	end
+end
+
+
+
 aliveai.steal=function(self,ste)
 	local known=aliveai.getknown(self,ste)
 	if known=="member" or not ste:is_player() then return self end
@@ -48,6 +104,10 @@ aliveai.light=function(self)
 	elseif self.light==0 or math.random(1,10)~=1 then
 		return
 	end
+
+	aliveai.max_paths_per_s.checked=aliveai.max_paths_per_s.checked+1
+	if aliveai.max_paths_per_s.checked>aliveai.max_paths_per_s.times then return nil end
+
 	aliveai.showstatus(self,"check light")
 	local pos=aliveai.roundpos(self.object:getpos())
 	pos.y=pos.y-1
@@ -61,6 +121,9 @@ aliveai.light=function(self)
 	local light=l
 	local lightpos
 	local traped=false
+
+
+
 	for r = 1, radius do
 		if traped and self.lightdamage==1 and ((self.light>0 and pos.y<0) or (self.light<0 and pos.y>0)) then
 			local posl=self.object:getpos()
@@ -190,46 +253,50 @@ aliveai.searchobjects=function(self)
 					aliveai.sayrnd(self,"ahh")
 					aliveai.searchhelp(self)
 					return self
+				elseif self.coming==1 and known=="member" and aliveai.distance(self,ob:getpos())>7 then
+					self.come=ob
+					self.zeal=5
+					return self
 				end
 			end
 		end
 end
 
 
-aliveai.known=function(self,ob,type)
+aliveai.known=function(self,ob,typ)
 	if not ob then return end
 	if not self.known then self.known={} end
 	local name
 	if ob:is_player() then 
 		name=ob:get_player_name()
+	elseif ob:get_luaentity().aliveai and ob:get_luaentity().botname then
+		name=ob:get_luaentity().botname
 	else
 		name=ob:get_luaentity().name
 	end
-	if type~="" then
-		self.known[name]=type
+	if typ~="" then
+		self.known[name]=typ
 	else
 		self.known[name]=nil
 	end
 end
 
-aliveai.getknown=function(self,ob,type)
+aliveai.getknown=function(self,ob,typ)
 	if not ob then return "" end
 	if not self.known then self.known={} end
 	local name
 	if ob:is_player() then 
 		name=ob:get_player_name()
+	elseif ob:get_luaentity().aliveai and ob:get_luaentity().botname then
+		name=ob:get_luaentity().botname
 	else
 		name=ob:get_luaentity().name
 	end
-	if not type then return self.known[name] end
-	return self.known[name]==type
+	if not typ then return self.known[name] end
+	return self.known[name]==typ
 end
 
 aliveai.come=function(self)
-
-
-
-
 	if self.zeal and self.zeal>0 then
 		self.zeal=self.zeal-0.02
 		if self.zeal<=0 then self.zeal=nil self.come=nil end
@@ -294,6 +361,7 @@ aliveai.come=function(self)
 					self.zeal=nil
 					aliveai.searchobjects(self)
 					aliveai.showstatus(self,"came",3)
+					self.done="come"
 					return self
 				end
 
@@ -973,7 +1041,9 @@ aliveai.path=function(self,near)
 				or minetest.registered_nodes[minetest.get_node({x=nn.x,y=nn.y+1,z=nn.z}).name].walkable) then
 					aliveai.exitpath(self)
 					aliveai.showstatus(self,"path blocked")
-					return self
+					self.object:setyaw(math.random(0,6.28))
+					aliveai.walk(self)
+					return 
 				end
 			end
 		elseif self.path[self.pathn]==nil then

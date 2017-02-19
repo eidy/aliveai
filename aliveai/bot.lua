@@ -11,13 +11,15 @@ aliveai.bot=function(self, dtime)
 	if not aliveai.dmgbynode(self) then return self end
 	if self.step(self,dtime) then return self end
 	aliveai.jumping(self)-- if need to jump
-	aliveai.msghandler(self)
-	if aliveai.come(self) then return self end
 	if aliveai.fight(self) then return self end
 	if aliveai.fly(self) then return self end
+	if aliveai.come(self) then return self end
+	if aliveai.need_helper(self) then return self end	-- give stuff
 	if aliveai.light(self) then return self end
+	if aliveai.timer(self) then return self end		-- remove monsters
+	aliveai.msghandler(self)
+	
 	aliveai.pickup(self)-- if can pick up items
-	if aliveai.timer(self) then return self end-- remove monsters
 
 --betweens helpers
 	if self.isrnd and self.pickupgoto then return self end

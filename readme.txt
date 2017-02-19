@@ -1,9 +1,8 @@
 By UjEdwin
-Version: 2.9
+Version: 3
 Licenses: code and media CC0
 
 Alive AI
-
 
 NPC AI mobs that can mine, craft, build, fight, escape, eat, climb+ladders, avoid heights/hurting blocks, use tools, remember enemies, swim/drowning, talk...
 
@@ -23,6 +22,12 @@ players can do: <name> come
 and <team> come
 default teams are Sam and Jezy ... eg: Sam come
 
+Commands:
+enable/diable bot status
+/aliveai status=true
+/aliveai status=false
+show count of bots
+/aliveai count
 
 ====================================================================================
 if you want to include this API in/with your mod (make a mod pack, like this):
