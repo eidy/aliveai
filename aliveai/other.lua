@@ -311,9 +311,10 @@ minetest.register_on_player_receive_fields(function(player, form, pressed)
 			end
 			aliveai.spawneruser[player:get_player_name()]=nil
 		else
-		if pressed.bot then meta:set_string("bot",pressed.bot) end
-		meta:set_string("infotext", "Spawner by " ..meta:get_string("owner") .. " (".. pressed.bot ..")")
-
+		if pressed.bot then
+			meta:set_string("bot",pressed.bot)
+			meta:set_string("infotext", "Spawner by " ..meta:get_string("owner") .. " (".. pressed.bot ..")")
+		end
 		if pressed.mese then
 			local n=1
 			if pressed.mese=="send_on_spawn" then n=2

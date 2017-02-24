@@ -113,6 +113,7 @@ if minetest.get_modpath("3d_armor") then
 			else
 				hp=self.armor.hp
 			end
+			self.hp=hp
 			self.object:set_hp(hp)
 			self.armor.hp=hp
 			aliveai.showhp(self,true)

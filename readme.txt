@@ -1,5 +1,5 @@
-By UjEdwin
-Version: 3
+By AiTechEye
+Version: 3.12
 Licenses: code and media CC0
 
 Alive AI
@@ -116,6 +116,7 @@ building		1	(houses)
 pickuping		1	(walks to/picks up items)
 attacking		0	(attacking without reason)
 coming		1	(can come if bots or players says <name> come)
+work_helper	0	gives all their stuff (exepttools) to other bots that have some more stuff.
 coming_players	1	(can come if players says <name> come)
 talking		1	(can talk in chat and listen)
 stealing		0	(steal from players, 1 for Jezzy) 
@@ -149,3 +150,54 @@ on_meet			self,target
 on_spoken_to		self,name,speaker,msg
 on_step			self,dtime			(return ssomething to abort the bot run, like if it need to folow a path or stand still)
 on_dig			self,pos,drop,number
+
+====================================================================================
+Usefull functions
+
+aliveai.viewfield(self,object)			if is front of it
+aliveai.visiable(self,pos2)			if the view not are blocked
+aliveai.distance(self,pos2)			self can be a position too
+aliveai.pointat(self,distance)			returns a position front of the bot, distance can be nil
+
+aliveai.gethp(object)			get hp/health and get_hp() value
+aliveai.showhp(self,p)			p: nil=green or red
+aliveai.showtext(self,text,hexcolor)		"ff0000" is red, "00ff00" are green, nil are also green
+
+aliveai.rndwalk(self,toogle)			toogle: nil=on, true=off
+aliveai.walk(self,sp)			sp: nil or speed number (defaults: 1=walk,2=run)
+aliveai.stand(self)				stand still
+aliveai.jump(self,velocity)			nil or {y,x,z}
+aliveai.punch(self,object,hp)
+aliveai.lookat(self,pos)
+
+aliveai.anim(self,type)			type can be: "stand", "lay", "walk", "mine", "walk_mine", "sit"
+aliveai.say(self,text)
+aliveai.get_bot_by_name(name)
+aliveai.known(self,object,type)		add value by object name, if its known as something
+aliveai.getknown(self,object,type)
+aliveai.searchhelp(self)			call bots from same team
+aliveai.samepos(pos1,pos2)			if positions is same or very near
+aliveai.roundpos(pos)
+
+aliveai.namecut(name,group)			cuts down a name, if its able (like default:wood / group:wood to w), if group is true return cut to group (like w to group:wood)
+aliveai.generate_house(self)			generate house instructions
+aliveai.showpath(pos,number,pos_is_a_table)	works if aliveai.status=true, number can be 1,2,3 pos_is_a_table can be true or nil
+aliveai.showstatus(self,text,color)		works if aliveai.status=true, color can be 1,2,3,4 (tempoary change the nametag)
+====================================================================================
+items
+aliveai.invadd(self,item,number,nfeedback)	add or remove to to inventory, nfeedback=no autocraft (can be nil)
+aliveai.invhave(self,item,number,getnum)	if have in inventory (getnum = get number of the item, can be nil)
+aliveai.newneed(self,item,num,search,type)	add items the bot need by some reason, item, number, search for type (item or node) search and type can be nil
+aliveai.haveneed(self,craft)			have items that needs, craft= craft if not have needs
+aliveai.place(self,pos,name)			place node
+aliveai.dig(self,pos)				dig node
+aliveai.eat(self,name)			try to eat an item
+aliveai.spawnpickup(pos,item,number)		spawn item
+aliveai.invdropall(self)			drop all items
+aliveai.use(self)				use tool in self.tools
+====================================================================================
+paths
+aliveai.exitpath(self)			exit path walking
+aliveai.path(self,near			walk on path (returns self.done="done" if finished or does self.path=nili if feiled)
+aliveai.creatpath(self,pos1,pos2,distance,not_advanced) (set as self.path=path to make it work)
+

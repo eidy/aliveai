@@ -1,4 +1,3 @@
-
 aliveai.bot=function(self, dtime)
 	self.timer=self.timer+dtime
 	self.timerfalling=self.timerfalling+dtime
@@ -193,7 +192,6 @@ on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 		end
 
 		if tool_capabilities and tool_capabilities.damage_groups and tool_capabilities.damage_groups.fleshy then
-			if not self.hp then self.hp=self.object:get_hp() end
 			self.hp=self.hp-tool_capabilities.damage_groups.fleshy
 			self.object:set_hp(self.hp)
 		end
@@ -375,6 +373,7 @@ on_step=aliveai.bot,
 	pickuping= def.pickuping or 1,
 	attacking= def.attacking or 0,
 	coming= def.coming or 1,
+	work_helper= def.work_helper or 0,
 	coming_players= def.coming_players or 1,
 	talking= def.talking or 1,
 	stealing= def.stealing or 0,

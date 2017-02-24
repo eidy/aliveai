@@ -16,7 +16,7 @@ aliveai.need_helper=function(self)
 		end
 		return
 	end
-	if self.coming~=1 or self.building~=1 or math.random(1,50)~=1 then return end
+	if self.work_helper==0 or self.coming~=1 or self.building~=1 or math.random(1,50)~=1 then return end
 	aliveai.max(self,true)
 	local pos=self.object:getpos()
 	local self_inv=0
@@ -224,42 +224,58 @@ end
 aliveai.searchobjects=function(self)
 		local pos=self.object:getpos()
 		local d=aliveai.distance(self,pos)
-		local rndtarget
+		local rndob
+		local d=self.distance
 		aliveai.showstatus(self,"search objects")
-		for _, ob in ipairs(minetest.get_objects_inside_radius(pos, self.distance)) do
-			local en=ob:get_luaentity()
-			if ob and ob:getpos() and aliveai.visiable(self,ob:getpos()) and ob:is_player()
-			or (en and en.object and en.itemstring==nil and en.type~="" and not (en.botname==self.botname or en.team==self.team)) then
-				local known=aliveai.getknown(self,ob)
-				local enemy
-				if en and en.type=="monster" then
-					enemy=true
-				end
-				if self.attacking==1 or enemy or known=="fight" or (known==nil and self.object:get_hp()<self.hp_max and not (self.attack_players==0 and ob:is_player())) then
-					self.temper=2
-					self.fight=ob
-					self.on_detect_enemy(self,self.fight)
-					if enemy or known=="fight" or math.random(1,3)==1 then
-						aliveai.sayrnd(self,"come here")
+		for i=0,1,1 do
+			for _, ob in ipairs(minetest.get_objects_inside_radius(pos, self.distance)) do
+				if i==1 then
+					if rndob then
+						ob=rndob
+					else
 						return self
 					end
-				elseif known=="come" then
-					self.zeal=2
-					self.come=ob
-					return self
-				elseif known=="fly" then
-					self.temper=-0.3
-					self.fly=ob
-					aliveai.sayrnd(self,"ahh")
-					aliveai.searchhelp(self)
-					return self
-				elseif self.coming==1 and known=="member" and aliveai.distance(self,ob:getpos())>7 then
-					self.come=ob
-					self.zeal=5
-					return self
+				end
+				local en=ob:get_luaentity()
+				if ob and ob:getpos() and aliveai.visiable(self,ob:getpos()) and aliveai.viewfield(self,ob) and ob:is_player()
+				or (en and en.object and en.itemstring==nil and en.type~="" and not (en.botname==self.botname or en.team==self.team)) then
+					local known=aliveai.getknown(self,ob)
+					local enemy
+					if en and en.type=="monster" then
+						enemy=true
+					end
+					if math.random(1,2)+i==1 then
+						rndob=ob
+					elseif self.attacking==1 or enemy or known=="fight" or (known==nil and self.object:get_hp()<self.hp_max and not (self.attack_players==0 and ob:is_player())) then
+						self.temper=2
+						self.fight=ob
+						self.on_detect_enemy(self,self.fight)
+						if enemy or known=="fight" or math.random(1,3)==1 then
+							aliveai.sayrnd(self,"come here")
+							return self
+						end
+					elseif known=="come" then
+						self.zeal=2
+						self.come=ob
+						return self
+					elseif known=="fly" then
+						self.temper=-0.3
+						self.fly=ob
+						aliveai.sayrnd(self,"ahh")
+						aliveai.searchhelp(self)
+						return self
+					elseif self.coming==1 and known=="member" and aliveai.distance(self,ob:getpos())>7 then
+						self.come=ob
+						self.zeal=5
+						return self
+					end
 				end
 			end
+			d=1
 		end
+
+
+
 end
 
 
@@ -405,6 +421,8 @@ aliveai.fly=function(self)
 		if self.temper<-1.2 or self.object:get_hp()>=self.hp_max then self.temper=5 self.fight=self.fly self.fly=nil self.time=self.otime return self end
 	end
 	if self.fly and self.temper<0 and aliveai.visiable(self,self.fly:getpos()) then
+		self.object:setyaw(self.object:getyaw()+3.14)
+		if not aliveai.viewfield(self,self.fly) then return self end
 		self.on_escaping(self,self.fly)
 		local pos1=self.object:getpos()
 		local pos2=self.fly:getpos()
@@ -499,6 +517,7 @@ aliveai.fight=function(self)
 			self.fight=nil
 			self.backup=nil
 			self.time=self.otime
+			self.seen=nil
 		end
 	end
 
@@ -549,7 +568,8 @@ aliveai.fight=function(self)
 -- search
 		if d<self.distance and self.temper>0 then
 		self.on_detecting_enemy(self)
-			if see then
+			if see and self.seen or aliveai.viewfield(self,self.fight) then
+				self.seen=true
 -- attack
 				aliveai.rndwalk(self,false)
 				if d>self.arm and vy>-2 then
@@ -613,6 +633,7 @@ aliveai.fight=function(self)
 				end
 -- if not see
 			else
+				self.seen=nil
 -- create path
 				local path=aliveai.creatpath(self,pos,fpos,d)
 				if path then
@@ -994,7 +1015,7 @@ aliveai.exitpath=function(self)
 	return self
 end
 
-aliveai.path=function(self,near)
+aliveai.path=function(self)
 	self.time=self.otime
 	if self.path then
 	if not self.path_timer then self.path_timer=0 end

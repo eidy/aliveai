@@ -104,6 +104,7 @@ aliveai.create_bot({
 		end
 		if self.ti.t<0 then
 			local pos=self.object:getpos()
+			self.ex=true
 			self.object:punch(self.object,1,{full_punch_interval=1,damage_groups={fleshy=self.object:get_hp()*2}},nil)
 			aliveai_nitroglycerine.explode(pos,{
 				radius=10,
@@ -118,6 +119,7 @@ aliveai.create_bot({
 	end,
 	on_death=function(self,puncher,pos)
 			if not self.ex then
+				self.hp=0
 				self.ex=true
 				aliveai_nitroglycerine.explode(pos,{
 				radius=2,
@@ -979,6 +981,7 @@ aliveai.create_bot({
 			maxexptime = 1,
 			minsize = 0.4,
 			maxsize = 0.8,
+			glow=15,
 			texture = "aliveai_threats_quantum_monster_lights.png",
 		})
 

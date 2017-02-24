@@ -14,6 +14,7 @@ aliveai.create_bot({
 aliveai.create_bot({
 		name="folk4",
 		texture="aliveai_folk4.png",
+		work_helper=1,
 })
 aliveai.create_bot({
 		name="folk5",
@@ -69,6 +70,7 @@ aliveai.create_bot({
 		texture="aliveai_folk14.png",
 		hp=50,
 		dmg=8,
+		work_helper=1,
 })
 aliveai.create_bot({
 		name="folk15",

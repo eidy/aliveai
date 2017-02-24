@@ -10,13 +10,11 @@ aliveai.gethp=function(ob)		-- because some mods are remaking mobs health system
 	return h
 end
 
-aliveai.showhp=function(self,p)
+aliveai.showtext=function(self,text,color)
 	self.delstatus=math.random(0,1000) 
 	local del=self.delstatus
-	local hp=self.object:get_hp()
-	local color="ff0000"
-	if p then color="00ff00" end
-	self.object:set_properties({nametag=hp .." / " .. self.hp_max,nametag_color="#" ..  color})
+	color=color or "ff0000"
+	self.object:set_properties({nametag=text,nametag_color="#" ..  color})
 	minetest.after(1.5, function(self,del)
 		if self and self.object and self.delstatus==del then
 			if self.namecolor~="" then
@@ -26,6 +24,13 @@ aliveai.showhp=function(self,p)
 			end
 		end
 	end, self,del)
+	return self
+end
+
+aliveai.showhp=function(self,p)
+	local color="ff0000"
+	if p then color="00ff00" end
+	aliveai.showtext(self,self.object:get_hp() .." / " .. self.hp_max,color)
 	return self
 end
 
@@ -862,6 +867,29 @@ aliveai.roundpos=function(pos)
 		return pos
 	end
 	return nil
+end
+
+aliveai.viewfield=function(self,ob)
+	local pos1
+	local pos2=ob:getpos()
+	if not self.aliveai and self.x and self.y and self.z then
+		pos1=self
+	else
+		pos1=self.object:getpos()
+	end
+	return aliveai.distance(pos1,pos2)>aliveai.distance(aliveai.pointat(self,1),pos2)
+end
+
+aliveai.pointat=function(self,d)
+	local pos=self.object:getpos()
+	local yaw=self.object:getyaw()
+	if yaw ~= yaw or type(yaw)~="number" then
+		yaw=0
+	end
+	d=d or 1
+	local x =math.sin(yaw) * -d
+	local z =math.cos(yaw) * d
+	return {x=pos.x+x,y=pos.y,z=pos.z+z}
 end
 
 aliveai.distance=function(self,pos2)
