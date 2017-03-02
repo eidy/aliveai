@@ -1,4 +1,4 @@
-aliveai_trader={}
+﻿aliveai_trader={}
 
 aliveai.savedata.trader=function(self)
 	if self.trader then

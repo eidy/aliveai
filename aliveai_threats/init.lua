@@ -1,14 +1,24 @@
-aliveai_threats={}
+ï»¿aliveai_threats={debris={}}
 
 aliveai.savedata.clone=function(self)
 	if self.clone then
 		return {clone=1}
+	end
+	if self.natural_monster then
+		return {t1=self.t1,t2=self.t2,t3=self.t3,natural_monster=1,consists=self.consists}
 	end
 end
 
 aliveai.loaddata.clone=function(self,r)
 	if r.clone then
 		self.clone=r.clone
+	end
+	if r.natural_monster then
+		self.t1=r.t1
+		self.t2=r.t2
+		self.t3=r.t3
+		self.natural_monster=1
+		self.consists=r.consists
 	end
 	return self
 end
@@ -758,21 +768,21 @@ aliveai.create_bot({
 		name_color="",
 		attack_chance=2,
 	on_step=function(self,dtime)
-		if not self.fínvist and (self.fight or self.fly) then
-			self.fínvist=true
+		if not self.finvist and (self.fight or self.fly) then
+			self.finvist=true
 				self.object:set_properties({
 					is_visible=false,
 					makes_footstep_sound=false,
 					textures={"aliveai_threats_i.png","aliveai_threats_i.png","aliveai_threats_i.png"}
 				})
-		elseif self.fínvist and not (self.fight or self.fight) then
-			self.fínvist=nil
+		elseif self.finvist and not (self.fight or self.fight) then
+			self.finvist=nil
 			self.object:set_properties({
 				is_visible=true,
 				makes_footstep_sound=true,
 				textures={"aliveai_threats_ninja.png","aliveai_threats_i.png","aliveai_threats_i.png"}
 			})
-		elseif self.fínvist and self.fight then
+		elseif self.finvist and self.fight then
 			if math.random(1,10)<3 then
 				self.object:set_properties({is_visible=true})
 			else
@@ -793,8 +803,8 @@ aliveai.create_bot({
 	end,
 	on_punched=function(self,puncher)
 		local pos=self.object:getpos()
-		if self.fínvist then
-			self.fínvist=nil
+		if self.finvist then
+			self.finvist=nil
 			self.object:set_properties({
 				is_visible=true,
 				makes_footstep_sound=true,
@@ -1003,6 +1013,140 @@ aliveai.create_bot({
 			minsize = 0.1,
 			maxsize = 2,
 			texture = "default_dirt.png^[colorize:#000000cc",
+			collisiondetection = true,
+		})
+	end
+})
+
+minetest.register_globalstep(function(dtime) 
+	for i, o in pairs(aliveai_threats.debris) do
+		if o.ob and o.ob:get_luaentity() and o.ob:get_hp()>0 and o.ob:getvelocity().y~=0 then
+			for ii, ob in pairs(minetest.get_objects_inside_radius(o.ob:getpos(), 1.5)) do
+				local en=ob:get_luaentity()
+				if not en or (en.name~="__builtin:item" and not (en.aliveai and en.botname==o.n) ) then
+					ob:punch(o.ob,1,{full_punch_interval=1,damage_groups={fleshy=1}},nil)
+					o.ob:setvelocity({x=0, y=0, z=0})
+					table.remove(aliveai_threats.debris,i)
+					break
+				end
+			end
+		else
+			table.remove(aliveai_threats.debris,i)
+		end
+	end
+end)
+
+
+aliveai.create_bot({
+		attack_players=1,
+		name="natural_monster",
+		team="natural",
+		texture="aliveai_threats_natural_monster.png",
+		attacking=1,
+		talking=0,
+		light=0,
+		building=0,
+		type="monster",
+		hp=10,
+		name_color="",
+		collisionbox={-0.5,-0.5,-0.5,0.5,0.5,0.5},
+		visual="cube",
+		basey=0.5,
+		drop_dead_body=0,
+		escape=0,
+		spawn_on={"group:sand","group:soil","default:snow","default:snowblock","default:ice","group:leaves","group:tree","group:stone","group:cracky","group:level","group:crumbly","group:choppy"},
+		attack_chance=2,
+	on_spawn=function(self)
+		local pos=self.object:getpos()
+		pos.y=pos.y-1.5
+		if minetest.get_node(pos).name=="aliveai:spawner" then pos.y=pos.y-1 end
+		local drop=minetest.get_node_drops(minetest.get_node(pos).name)[1]
+		local n=minetest.registered_nodes[minetest.get_node(pos).name]
+		if not (n and n.walkable) or drop=="" or type(drop)~="string" then self.object:remove() return self end
+		local t=n.tiles
+		if not t[1] then self.object:remove() return self end
+		local tx={}
+		self.t1=t[1]
+		self.t2=t[1]
+		self.t3=t[1]
+		self.natural_monster=1
+		self.consists=drop
+		self.team=self.consists
+		if t[2] then self.t2=t[2] self.t3=t[2] end
+		if t[3] and t[3].name then self.t3=t[3].name
+		elseif t[3] then self.t3=t[3]
+		end
+		tx[1]=self.t1
+		tx[2]=self.t2
+		tx[3]=self.t3
+		tx[4]=self.t3
+		tx[5]=self.t3 .."^aliveai_threats_natural_monster.png"
+		tx[6]=self.t3
+		self.object:set_properties({textures=tx})
+		self.cctime=0
+	end,	
+	on_load=function(self)
+		if self.natural_monster then
+			local tx={}
+			tx[1]=self.t1
+			tx[2]=self.t2
+			tx[3]=self.t3
+			tx[4]=self.t3
+			tx[5]=self.t3 .."^aliveai_threats_natural_monster.png"
+			tx[6]=self.t3
+			self.object:set_properties({textures=tx})
+			self.team=self.consists
+			self.cctime=0
+		else
+			self.object:remove()
+		end
+	end,
+	on_step=function(self,dtime)
+		if self.fight and (self.cctime<1 or self.time==self.otime) then
+			self.cctime=5
+			local d=aliveai.distance(self,self.fight:getpos())
+			if not (d>4 and d<self.distance and aliveai.viewfield(self,self.fight) and aliveai.visiable(self,self.fight:getpos())) then return end
+			local pos=self.object:getpos()
+			local ta=self.fight:getpos()
+			if not (ta and pos) then return end
+			aliveai.stand(self)
+			aliveai.lookat(self,ta)
+			local e=minetest.add_item({x=pos.x,y=pos.y+0.5,z=pos.z},self.consists)
+			local vc = {x = pos.x - ta.x, y = pos.y - ta.y+1, z = pos.z - ta.z}
+			local amount = (vc.x ^ 2 + vc.y ^ 2 + vc.z ^ 2) ^ 0.25
+			local v = -15
+			if self.fight:is_player() then vc.y = vc.y -1 end
+			vc.x = vc.x * v / amount
+			vc.y = vc.y * v / amount
+			vc.z = vc.z * v / amount
+			e:setvelocity(vc)
+			e:get_luaentity().age=(tonumber(minetest.setting_get("item_entity_ttl")) or 900)-2
+			table.insert(aliveai_threats.debris,{ob=e,n=self.botname})
+			return self
+		elseif self.fight and self.cctime>1 then
+			self.cctime=self.cctime-1
+		end
+	end,
+	on_death=function(self,puncher,pos)
+		aliveai.invadd(self,self.consists,math.random(1, 4),false)
+	end,
+	on_punched=function(self,puncher)
+		local pos=self.object:getpos()
+		aliveai.lookat(self,pos)
+		minetest.add_particlespawner({
+			amount = 5,
+			time =0.05,
+			minpos = pos,
+			maxpos = pos,
+			minvel = {x=-2, y=-2, z=-2},
+			maxvel = {x=1, y=0.5, z=1},
+			minacc = {x=0, y=-8, z=0},
+			maxacc = {x=0, y=-10, z=0},
+			minexptime = 2,
+			maxexptime = 1,
+			minsize = 0.2,
+			maxsize = 4,
+			texture = self.t1,
 			collisiondetection = true,
 		})
 	end

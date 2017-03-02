@@ -1,4 +1,4 @@
-aliveai_nitroglycerine={}
+﻿aliveai_nitroglycerine={}
 aliveai_nitroglycerine.explode=function(pos,node)
 	if not node then node={} end
 

@@ -1,4 +1,4 @@
-
+﻿
 aliveai.namecut=function(name,group)-- return name to cut or cut to group
 -- to cut
 	if name=="air" or name==nil then return "a" end

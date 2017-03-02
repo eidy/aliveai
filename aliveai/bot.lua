@@ -1,14 +1,15 @@
-aliveai.bot=function(self, dtime)
+﻿aliveai.bot=function(self, dtime)
 	self.timer=self.timer+dtime
 	self.timerfalling=self.timerfalling+dtime
 	if self.timerfalling>0.2 then aliveai.falling(self) end
+	if self.turnlook and aliveai.turnlook(self,dtime) then return self end
 	if self.timer<=self.time then return self end
 	self.timer=0
 
 	if aliveai.regulate_prestandard>0 and math.random(1,aliveai.regulate_prestandard)==1 then return self end
 --betweens
 	if not aliveai.dmgbynode(self) then return self end
-	if self.step(self,dtime) then return self end
+	if self.step(self,dtime) or self.controlled==1 then return self end
 	aliveai.jumping(self)-- if need to jump
 	if aliveai.fight(self) then return self end
 	if aliveai.fly(self) then return self end
@@ -200,12 +201,12 @@ on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 
 		if self.object:get_hp()<=0 then
 			local pos=self.object:getpos()
-			aliveai.invdropall(self)
 			if self.drop_dead_body==1 then
 				aliveai.showstatus(self,"drop dead body")
 				minetest.add_entity(pos, def.mod_name ..":" .. def.name .."_dead"):setyaw(self.object:getyaw())
 			end
 			self.on_death(self,puncher,pos)
+			aliveai.invdropall(self)
 			aliveai.max(self,true)
 			return self
 		end

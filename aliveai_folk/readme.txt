@@ -1,1 +1,1 @@
-npc for aliveai
+﻿npc for aliveai

@@ -1,4 +1,4 @@
-aliveai.crafttools=function(self,t)
+﻿aliveai.crafttools=function(self,t)
 	if math.random(1,10)~=1 then return end
 	if type(self.tools)=="table" then return end
 	for name, s in pairs(aliveai.tools_handler) do
@@ -80,7 +80,7 @@ end
 
 aliveai.give_to_bot=function(self,clicker)
 	local stack=clicker:get_wielded_item()
-	if stack:get_name()=="" then return end
+	if stack:get_name()=="" or stack:get_name()=="aliveai_minecontroller:controller" then return end
 	local inv=clicker:get_inventory()
 	local i=clicker:get_wield_index()
 	local hp=self.object:get_hp()

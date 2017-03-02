@@ -1,4 +1,4 @@
-aliveai.gethp=function(ob)		-- because some mods are remaking mobs health system, like mobs redo
+﻿aliveai.gethp=function(ob)		-- because some mods are remaking mobs health system, like mobs redo
 	if not ob then return 0 end
 	local h=ob:get_hp()
 	if ob:get_luaentity() then
@@ -433,7 +433,7 @@ aliveai.rndwalk=function(self,toogle)
 	end
 -- normal rnd
 	if rnd==0 then
-		self.object:setyaw(math.random(0,6.28))
+		aliveai.lookat(self,math.random(0,6.28),true)
 		aliveai.stand(self)
 	elseif rnd==1 then
 		aliveai.stand(self)
@@ -451,7 +451,7 @@ aliveai.rndwalk=function(self,toogle)
 						return self
 					end
 					self.staring.step=self.staring.step+1
-					aliveai.lookat(self,ob:getpos())
+					aliveai.lookat(self,ob:getpos(),true)
 					aliveai.sayrnd(self,"what are you staring at?")
 					return self
 				end
@@ -464,13 +464,13 @@ aliveai.rndwalk=function(self,toogle)
 						self.staring={}
 						self.staring.name=ob:get_luaentity().name
 						self.staring.step=1
-						aliveai.lookat(self,ob:getpos())
+						aliveai.lookat(self,ob:getpos(),true)
 						return self
 					elseif ob:is_player() then
 						self.staring={}
 						self.staring.name=ob:get_player_name()
 						self.staring.step=1
-						aliveai.lookat(self,ob:getpos())
+						aliveai.lookat(self,ob:getpos(),true)
 						return self
 					end
 				end
@@ -479,7 +479,7 @@ aliveai.rndwalk=function(self,toogle)
 		self.staring=nil
 		local rndpos
 		for _, ob in ipairs(minetest.get_objects_inside_radius(pos, self.distance)) do
-			if ob and ob:getpos() then
+			if ob and ob:getpos() and aliveai.viewfield(self,ob) then
 				rndpos=ob:getpos()
 				if math.random(1,3)==1 then break end
 			end
@@ -489,8 +489,7 @@ aliveai.rndwalk=function(self,toogle)
 			aliveai.stand(self)
 		end
 	elseif rnd<4 then
-		self.object:setyaw(math.random(0,6.28))
-		aliveai.walk(self)
+		aliveai.lookat(self,math.random(0,6.28),true,true)
 	end
 end
 
@@ -960,17 +959,39 @@ aliveai.stand=function(self)
 	return self
 end
 
-aliveai.lookat=function(self,pos2)
-	if pos2==nil or pos2.x==nil then
+aliveai.lookat=function(self,pos2,advanced,walk)
+	if pos2==nil or (type(pos2)~="number" and pos2.x==nil) then
 		return nil
 	end
-	self.object:setyaw(0)
-	local pos1=self.object:getpos()
-	local vec = {x=pos1.x-pos2.x, y=pos1.y-pos2.y, z=pos1.z-pos2.z}
-	local yaw = math.atan(vec.z/vec.x)-math.pi/2
-	if type(yaw)~="number" then yaw=0 end
-	if pos1.x >= pos2.x then yaw = yaw+math.pi end
-	self.object:setyaw(yaw)
+	local yaw=0
+	if type(pos2)=="table" then
+		local pos1=self.object:getpos()
+		local vec = {x=pos1.x-pos2.x, y=pos1.y-pos2.y, z=pos1.z-pos2.z}
+		local yaw = math.atan(vec.z/vec.x)-math.pi/2
+		if type(yaw)~="number" then yaw=0 end
+		if pos1.x >= pos2.x then yaw = yaw+math.pi end
+		if not advanced then self.object:setyaw(yaw) end
+		self.tmp_yw=yaw
+	else
+		yaw=pos2
+		if not advanced then self.object:setyaw(pos2) end
+	end
+	yaw=self.tmp_yw
+	if not advanced or self.turnlook or type(yaw)~="number" then return end
+	
+	self.tmp_yw=nil
+	local cy=self.object:getyaw()
+	local turn=cy>yaw
+	local add=0.314
+	if turn==true then add=-0.314 end
+	self.turnlook={turn=turn,cur=cy,yaw=yaw,add=add,walk=walk,timer=0,times=10}
+	if cy-yaw>5 or cy-yaw<-5 then
+		local i=6.28
+		if cy-yaw<-5 then i=-6.28 end
+		self.turnlook.turn=cy-yaw>6
+		self.turnlook.yaw=i+yaw
+		self.turnlook.add=self.turnlook.add*-1
+	end
 	return self
 end
 

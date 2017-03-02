@@ -1,4 +1,4 @@
-aliveai={
+﻿aliveai={
 	character_model="character.b3d",	--character model
 	check_spawn_space=true,
 	enable_build=true,
@@ -34,6 +34,23 @@ aliveai={
 		}
 	},
 }
+
+aliveai.turnlook=function(self,dtime)
+	self.turnlook.timer=self.turnlook.timer+dtime
+	if self.turnlook.timer<0.05 then return self end
+	self.turnlook.timer=0
+	self.turnlook.times=self.turnlook.times-1
+	self.turnlook.cur=self.turnlook.cur+self.turnlook.add
+	local cur=self.turnlook.cur<self.turnlook.yaw
+	if self.turnlook.times<1 or (self.turnlook.turn==true and cur==true) or (self.turnlook.turn==false and cur==false) then
+		self.object:setyaw(self.turnlook.yaw)
+		if self.turnlook.walk then aliveai.walk(self) end
+		self.turnlook=nil
+		return
+	end
+	self.object:setyaw(self.turnlook.cur)
+	return self
+end
 
 minetest.register_globalstep(function(dtime)
 	aliveai.max_paths_per_s.timer=aliveai.max_paths_per_s.timer+dtime

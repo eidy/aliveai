@@ -1,4 +1,4 @@
-aliveai.on_spoken_to=function(self,name,speaker,msg)
+﻿aliveai.on_spoken_to=function(self,name,speaker,msg)
 	aliveai.showstatus(self,"spoken too: " .. msg)
 	local player=minetest.get_player_by_name(speaker)
 

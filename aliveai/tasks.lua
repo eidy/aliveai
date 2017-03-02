@@ -1,4 +1,4 @@
-aliveai.savedata.task_build=function(self)
+﻿aliveai.savedata.task_build=function(self)
 	if self.task=="build" then
 		return {
 			house=self.house,

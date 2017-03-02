@@ -1,4 +1,4 @@
-aliveai.need_helper=function(self)
+﻿aliveai.need_helper=function(self)
 	if self.help_need then
 		if self.done=="come" then
 			self.done=""
@@ -228,7 +228,7 @@ aliveai.searchobjects=function(self)
 		local d=self.distance
 		aliveai.showstatus(self,"search objects")
 		for i=0,1,1 do
-			for _, ob in ipairs(minetest.get_objects_inside_radius(pos, self.distance)) do
+			for iob, ob in ipairs(minetest.get_objects_inside_radius(pos, self.distance)) do
 				if i==1 then
 					if rndob then
 						ob=rndob

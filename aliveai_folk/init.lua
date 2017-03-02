@@ -1,7 +1,13 @@
-aliveai.create_bot({
+﻿aliveai.create_bot({
 		name="folk1",
 		texture="aliveai_folk1.png",
 		arm=3,
+		--on_step=function(self,dtime)-- used when testing functions
+		--	return self
+		--end,
+		--on_click=function(self,clicker)
+		--	aliveai.lookat(self,clicker:getpos(),true)
+		--end
 })
 aliveai.create_bot({
 		name="folk2",
