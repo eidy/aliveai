@@ -34,6 +34,42 @@ aliveai.showhp=function(self,p)
 	return self
 end
 
+aliveai.get_dir=function(self,pos2)
+	local pos1
+	if self.x and self.y and self.z then
+		pos1=self
+	elseif self.object then
+		pos1=self.object:getpos()
+	else
+		return {x=0,y=0,z=0}
+	end
+	if pos2 and not (pos2.x and pos2.y and pos2.z) then
+		pos2=pos2:getpos()
+	end
+	if not (pos2 and pos2.x) then
+		return {x=0,y=0,z=0}
+	end
+	local d=math.floor(aliveai.distance(pos1,pos2)+0.5)
+	return {x=(pos1.x-pos2.x)/-d,y=(pos1.y-pos2.y)/-d,z=(pos1.z-pos2.z)/-d}
+end
+
+aliveai.turnlook=function(self,dtime)
+	self.turnlook.timer=self.turnlook.timer+dtime
+	if self.turnlook.timer<0.05 then return self end
+	self.turnlook.timer=0
+	self.turnlook.times=self.turnlook.times-1
+	self.turnlook.cur=self.turnlook.cur+self.turnlook.add
+	local cur=self.turnlook.cur<self.turnlook.yaw
+	if self.turnlook.times<1 or (self.turnlook.turn==true and cur==true) or (self.turnlook.turn==false and cur==false) then
+		self.object:setyaw(self.turnlook.yaw)
+		if self.turnlook.walk then aliveai.walk(self) end
+		self.turnlook=nil
+		return
+	end
+	self.object:setyaw(self.turnlook.cur)
+	return self
+end
+
 aliveai.timer=function(self)
 	if self.type=="npc" then return end
 	if not self.lifetimer or self.fly or self.come or self.fight then self.lifetimer=aliveai.lifetimer end
@@ -497,7 +533,7 @@ aliveai.punch=function(self,ob,hp)
 	hp=hp or 1
 	if not ob then return end
 	if ob:get_luaentity() and ob:get_luaentity().itemstring then ob:remove() return end
-	ob:punch(self.object,1,{full_punch_interval=1,damage_groups={fleshy=hp}},nil)
+	ob:punch(self.object,1,{full_punch_interval=1,damage_groups={fleshy=hp}})
 	if self.object:get_hp()<=0 then
 		return nil
 	end
@@ -531,8 +567,7 @@ end
 
 aliveai.falling=function(self)
 	self.timerfalling=0
-	if aliveai.regulate_prestandard>0 and math.random(1,aliveai.regulate_prestandard)==1 then return self end
-
+	if aliveai.bots_delay2>aliveai.max_delay then return self end
 	if self.isrnd and self.path and self.floating==nil then aliveai.path(self) return self end
 	if self.isrnd and self.done=="path" then self.timerfalling=0.2 self.done="" end
 
@@ -616,14 +651,12 @@ aliveai.falling=function(self)
 		self.air=nil
 		self.drown=nil
 -- falling
-	elseif self.object:getvelocity().y~=0 then --and (test.walkable==false or pos.y%1~=0.5) then
+	elseif self.object:getvelocity().y~=0 then
 		if not self.fallingfrom or self.fallingfrom<pos.y then self.fallingfrom=pos.y end
 	end
 --and hit the ground
 	if self.fallingfrom then
-		pos.y=pos.y-1
-		local node3=minetest.get_node(pos)
-		if node3 and minetest.registered_nodes[node3.name] and minetest.registered_nodes[node3.name].walkable then
+		if self.object:getvelocity().y==0 then
 			local from=math.floor(self.fallingfrom+0.5)
 			local hit=math.floor(pos.y+0.5)
 			local d=from-hit
@@ -717,6 +750,13 @@ aliveai.jumping=function(self)
 	if self.object:getvelocity().y==0 and test.walkable and test.drawtype~="nodebox" then
 		aliveai.jump(self)
 		aliveai.showstatus(self,"jump inside block")
+		if self.light==-1 then return self end
+		pos.y=pos.y+2
+		local n1=minetest.registered_nodes[minetest.get_node(pos).name]
+		if n1 and n1.walkable then
+			aliveai.showstatus(self,"stuck inside block")
+			aliveai.punch(self,self.object,1)
+		end
 		return self
 	end
 	if self.move.x+self.move.z~=0 and self.object:getvelocity().y==0 then
@@ -869,12 +909,13 @@ aliveai.roundpos=function(pos)
 end
 
 aliveai.viewfield=function(self,ob)
-	local pos1
-	local pos2=ob:getpos()
-	if not self.aliveai and self.x and self.y and self.z then
-		pos1=self
+	if not (self and self.object and ob) then return false end
+	local pos1=self.object:getpos()
+	local pos2
+	if ob.x and ob.y and ob.z then
+		pos2=ob
 	else
-		pos1=self.object:getpos()
+		pos2=ob:getpos()
 	end
 	return aliveai.distance(pos1,pos2)>aliveai.distance(aliveai.pointat(self,1),pos2)
 end
@@ -905,7 +946,10 @@ aliveai.distance=function(self,pos2)
 end
 
 aliveai.visiable=function(self,pos2)
-	if not pos2 or not pos2.x then return nil end
+	if pos2 and not (pos2.x and pos2.y and pos2.z) then
+		pos2=pos2:getpos()
+	end
+	if not (pos2 and pos2.x) then return nil end
 	local pos1
 	if self.x and self.y and self.z then
 		pos1=self
@@ -1111,16 +1155,17 @@ function aliveai.max(self,update)
 	end
 	aliveai.active_num=c+1
 	if c==0 then aliveai.active_num=0 end
-	if c>aliveai.max_num_by_self then
-		aliveai.regulate_prestandard=aliveai.max_num-c+2
-	else
-		aliveai.regulate_prestandard=0
-	end
 	local new=aliveai.newbot
 	aliveai.newbot=nil
+	if new and c+1>aliveai.max_new_bots then
+		self.object:remove()
+		return self
+	end
 	if update then
 		return self
-	elseif self.old==0 and (c+1>aliveai.max_num or (new and ((self.type=="monster" and c+1>aliveai.max_num_by_self_monsters) or c+1>aliveai.max_num_by_self))) then
+	elseif (self.old==0 and (aliveai.bots_delay2>aliveai.max_delay)) or (self.old==1 and aliveai.bots_delay2>aliveai.max_delay*1.2) then
+		print("aliveai: removed","delay: " .. aliveai.bots_delay2,"active bots: " ..aliveai.active_num)
+		aliveai.bots_delay2= aliveai.bots_delay2*0.99
 		self.object:remove()
 		return self
 	end

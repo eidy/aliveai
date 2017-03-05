@@ -1,5 +1,5 @@
 ﻿By AiTechEye
-Version: 3.31
+Version: 3.9
 Licenses: code and media CC0
 
 Alive AI
@@ -130,6 +130,7 @@ spawn_on		{"group:dirt","group:sand","default:snow"},
 hurts_by_light	1	(hurts when inside light, and depends on its position, like stuck in a dark cave in underground)
 annoyed_by_staring 1	(attacks objects if them are near it after a while)
 drowning		1
+usearmor		1	use the armor and wieldview
 
 on_step=function(self,dtime)
 	return self
@@ -145,18 +146,24 @@ on_spawn		self
 on_load			self
 on_random_walk		self
 on_click			self,clicker
-on_punched		self,puncher
+on_punched		self,puncher,dmg
 on_meet			self,target
 on_spoken_to		self,name,speaker,msg
 on_step			self,dtime			(return ssomething to abort the bot run, like if it need to folow a path or stand still)
 on_dig			self,pos,drop,number
-
+================== tasks (is called when everything else is done) (return something to exit the bot run) (task1 is buildning as default) (task2 is "stay at home" as default)
+================== self.task (string) and self.taskstep (number) is usefull for this
+task1			self
+task2			self
+task3			self
+task4			self
+task5			self
 ====================================================================================
 Usefull functions
 
-aliveai.viewfield(self,object)			if is front of it
+aliveai.viewfield(self,object_or_pos)		if is front of it
 aliveai.visiable(self,pos2)			if the view not are blocked
-aliveai.distance(self,pos2)			self can be a position too
+aliveai.distance(self_or_pos,pos)		self can be a position too
 aliveai.pointat(self,distance)			returns a position front of the bot, distance can be nil
 
 aliveai.gethp(object)			get hp/health and get_hp() value
@@ -169,6 +176,7 @@ aliveai.stand(self)				stand still
 aliveai.jump(self,velocity)			nil or {y,x,z}
 aliveai.punch(self,object,hp)
 aliveai.lookat(self,pos)
+aliveai.get_dir(self_or_pos,object_or_pos)
 
 aliveai.anim(self,type)			type can be: "stand", "lay", "walk", "mine", "walk_mine", "sit"
 aliveai.say(self,text)
@@ -200,4 +208,3 @@ paths
 aliveai.exitpath(self)			exit path walking
 aliveai.path(self,near			walk on path (returns self.done="done" if finished or does self.path=nili if feiled)
 aliveai.creatpath(self,pos1,pos2,distance,not_advanced) (set as self.path=path to make it work)
-

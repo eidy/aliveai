@@ -15,7 +15,7 @@ end
 
 if minetest.get_modpath("wieldview") then
 	aliveai.wieldviewr=function(self,item)
-		if self.visual~="mesh" or not (item and ItemStack(item) and ItemStack(item):get_definition()) then return end
+		if self.usearmor~=1 or self.visual~="mesh" or not (item and ItemStack(item) and ItemStack(item):get_definition()) then return end
 
 		if self.addedarmor then self.addedarmor=nil return self end
 
@@ -105,6 +105,7 @@ if minetest.get_modpath("3d_armor") then
 	end
 
 	aliveai.armor=function(self,a)
+		if self.usearmor~=1 then return self end
 		if a.dmg and self.armor and self.object:get_hp()>0 and self.armor.heal>0 then
 			local hp=self.object:get_hp()
 			local l_hp=math.floor(((self.armor.hp-hp)*(self.armor.heal*0.05))+0.5)

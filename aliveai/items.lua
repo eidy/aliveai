@@ -74,10 +74,6 @@ aliveai.tool_handler=function(self,t)
 	self.tool_chance= tool.tool_chance or self.tool_chance
 end
 
-
-
-
-
 aliveai.give_to_bot=function(self,clicker)
 	local stack=clicker:get_wielded_item()
 	if stack:get_name()=="" or stack:get_name()=="aliveai_minecontroller:controller" then return end
@@ -102,7 +98,6 @@ aliveai.give_to_bot=function(self,clicker)
 	inv:set_stack("main", i,nil)
 	return self
 end
-
 
 aliveai.use_smartshop=function(self)
 	if self.path and self.smartshop then
@@ -209,7 +204,7 @@ aliveai.invhave=function(self,name,n,getnum)
 		local count=0
 		if group~=name then-- only for namecuts
 			for nm, s in pairs(self.inv) do
-				if minetest.get_item_group(nm, group)>0 then -- or minetest.get_item_group(nm,name)>0 
+				if minetest.get_item_group(nm, group)>0 then 
 					count=count+s
 				end
 			end
@@ -249,7 +244,7 @@ aliveai.newneed=function(self,item,num,search,type)
 	if item=="default:chest_locked"		then search="default:chest_locked" type="node" end
 	if item=="default:glass"			then search="group:sand" type="node" end
 	if item=="w"				then search="group:tree" type="node" end
-	if item=="s" or item=="stone"		then search="group:stone" type="node" end
+	if item=="s" or item=="stone"		then item="default:cobble" search="group:stone" type="node" end
 	if item=="default:bush_stem"		then search="group:tree" item="default:wood" type="node" end
 	if item=="default:acacia_bush_stem"		then search="group:tree" item="default:wood" type="node" end
 	if item=="default:iron_lump"			then item="default:steel_ingot" end
@@ -295,7 +290,7 @@ aliveai.haveneed=function(self,craft)
 end
 
 aliveai.place=function(self,pos,name)
-	if aliveai.invhave(self,name,1) and minetest.get_node(pos) and minetest.registered_nodes[minetest.get_node(pos).name].buildable_to then
+	if minetest.registered_nodes[name] and aliveai.invhave(self,name,1) and minetest.get_node(pos) and minetest.registered_nodes[minetest.get_node(pos).name].buildable_to then
 		local name=aliveai.namecut(name,true)
 		if self.inv[name] then
 
@@ -425,53 +420,71 @@ end
 
 aliveai.eat=function(self,name)
 	if not (self and self.object and self.object:get_hp()>0)
-	or self.object:get_hp()>=self.hp_max or not (debug and debug.getupvalue) then
+	or self.object:get_hp()>=self.hp_max then
 		return nil
 	end
+
+	local gchange=0
+	local gname=""
+
 -- check if it have staple food to eat
 	if name=="" then
 		for i, v in pairs(aliveai.staplefood) do
 			if self.inv[i] then
-				name=i
+				gname=i
+				gchange=v
 				break
 			end
 		end
-		if name=="" then return end
+-- check if gotten item is staple food to eat
+	else
+		if aliveai.staplefood[name] then
+			gchange=aliveai.staplefood[name]
+			gname=name
+		end
 	end
-	local eatable={
-		minetest.registered_items[name],
-		minetest.registered_nodes[name],
-		minetest.registered_craftitems[name],
-		minetest.registered_tools[name]
-	}
-	for _, ob in pairs(eatable) do
-		if ob~=nil and ob.on_use~=nil then
-			local name2,change=debug.getupvalue(ob.on_use, 1)
-			if name2~=nil and name2=="hp_change" then
-				aliveai.staplefood[name]=1
-				local hp=self.object:get_hp()
-				local n=change
-				change=0
-				local num=0
-				for i=1,self.inv[name],1 do
-					change=change+n
-					num=num-1
-					if hp+change>=self.hp_max then break end
+
+	if gchange==0 and debug and debug.getupvalue then
+		local eatable={
+			minetest.registered_items[name],
+			minetest.registered_nodes[name],
+			minetest.registered_craftitems[name],
+			minetest.registered_tools[name]
+		}
+		for _, ob in pairs(eatable) do
+			if ob~=nil and ob.on_use~=nil then
+				local name2,change=debug.getupvalue(ob.on_use, 1)
+				if name2~=nil and name2=="hp_change" then
+					gname=name2
+					gchange=change
+					aliveai.staplefood[name]=change
 				end
-				if hp+change>self.hp_max then
-					self.object:set_hp(self.hp_max)
-				else
-					self.object:set_hp(hp+change)
-				end
-				aliveai.invadd(self,name,num)
-				aliveai.showhp(self,true)
-				aliveai.showstatus(self,"ate " .. name ..", hp up " .. change ..", was " ..hp .. ", hp now " .. self.object:get_hp() )
-				return self
 			end
 		end
-
 	end
-	return nil
+-- have or not found something to eat 
+	if gchange==0 then return nil end
+
+	local hp=self.object:get_hp()
+	local n=gchange
+	local change=0
+	local num=0
+	for i=1,self.inv[gname],1 do
+		change=change+n
+		num=num-1
+		if hp+change>=self.hp_max then break end
+	end
+	if hp+change>self.hp_max then
+		self.object:set_hp(self.hp_max)
+		self.hp=self.hp_max
+	else
+		self.object:set_hp(hp+change)
+		self.hp=hp+change
+	end
+	aliveai.invadd(self,gname,num)
+	aliveai.showhp(self,true)
+	aliveai.showstatus(self,"ate " .. gname ..", hp up " .. change ..", was " ..hp .. ", hp now " .. self.hp)
+	return self
 end
 
 aliveai.crafting=function(self,name,norecraft,neednum)
@@ -562,7 +575,6 @@ aliveai.crafting=function(self,name,norecraft,neednum)
 	return self
 end
 
-
 aliveai.getmaxstack=function(a)
 	if a==nil or a=="" then return 1 end
 	local b
@@ -579,7 +591,6 @@ aliveai.getmaxstack=function(a)
 	if not b then return 1 end
 	return b.stack_max
 end
-
 
 aliveai.spawnpickup=function(pos,name,n)
 	if (name==nil or name=="") or
@@ -774,7 +785,7 @@ aliveai.use=function(self)
 		local fpos=self.fight:getpos()
 		local d=aliveai.distance(self,fpos)
 		if d<self.distance and aliveai.visiable(self,fpos) then
-			local dir={x=fpos.x-pos.x,y=fpos.y-pos.y,z=fpos.z-pos.z}
+			local dir=aliveai.get_dir(self,fpos)
 			user.get_look_dir=aliveai.re(dir)
 			if d<=range then
 				pointed_thing.type="object"
@@ -802,8 +813,6 @@ aliveai.use=function(self)
 	end
 	return self
 end
-
-
 
 aliveai.createuser=function(self,index)
 	index=index or 1
@@ -848,8 +857,6 @@ aliveai.createuser=function(self,index)
 		hud_change=aliveai.re(),
 	}
 end
-
-
 
 minetest.register_tool("aliveai:copy", {
 	description = "Copy building tool",

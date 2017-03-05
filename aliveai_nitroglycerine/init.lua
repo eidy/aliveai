@@ -95,7 +95,6 @@ end
 aliveai_nitroglycerine.freeze=function(ob)
 	local p=ob:get_properties()
 	local pos=ob:getpos()
-
 	if ob:is_player() then
 		pos=vector.round(pos)
 		local node=minetest.get_node(pos)
@@ -107,9 +106,7 @@ aliveai_nitroglycerine.freeze=function(ob)
 		end, pos, ob)
 		return
 	end
-
 	if not ob:get_luaentity() then return end
-
 	if p.visual=="mesh" and p.mesh~="" and p.mesh~=nil and ob:get_luaentity().name~="aliveai_nitroglycerine:ice" then
 		aliveai_nitroglycerine.newice=true
 		local m=minetest.add_entity(pos, "aliveai_nitroglycerine:ice")
@@ -125,10 +122,10 @@ aliveai_nitroglycerine.freeze=function(ob)
 		minetest.add_item(pos,"default:ice")
 	end
 	local hp=ob:get_hp()+1
-	ob:punch(ob,1,{full_punch_interval=1,damage_groups={fleshy=hp}},nil)
+	ob:punch(ob,1,{full_punch_interval=1,damage_groups={fleshy=hp}})
 	if ob:get_luaentity().aliveai then
 		for _, ob in ipairs(minetest.get_objects_inside_radius(pos, 1)) do
-			if ob:get_luaentity().type and ob:get_luaentity().type=="" then
+			if ob:get_luaentity() and ob:get_luaentity().type and ob:get_luaentity().type=="" then
 			ob:remove()
 			end
 		end

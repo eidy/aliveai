@@ -31,10 +31,53 @@ aliveai.loaddata.task_build=function(self,r)
 	return self
 end
 
-
+aliveai.task_stay_at_home=function(self)
+	if self.home then
+		if self.path then 
+			aliveai.path(self)
+			return self
+		end
+		if math.random(1,10)==1 then
+			local d=aliveai.distance(self,self.home)
+			if d>self.distance*3 then
+				self.object:setpos(self.home)
+				aliveai.showstatus(self,"teleport home")
+				return self
+			elseif d>self.distance*1.5 then
+				local pos=self.object:getpos()
+				local p=aliveai.creatpath(self,pos,aliveai.roundpos(self.home))
+				if p~=nil then
+					self.path=p
+					aliveai.showstatus(self,"go home")
+					return self
+				else
+					local p=aliveai.neartarget(self,self.home,1,-10)
+					if p then
+						self.path=p
+						self.home=p
+						aliveai.showstatus(self,", change home pos, go home")
+						return self
+					end
+				end
+			end
+		end
+	end
+end
 
 aliveai.task_build=function(self)
-		if self.building~=1 then return self end
+		if self.building~=1 or self.home then return end
+		if aliveai.enable_build==true and self.task=="" then			--setting up for build a home
+			aliveai.showstatus(self,"set up for build a home")
+			self.build_step=1
+			self.build_pos=""
+			self.task="build"
+			self.ignoremineitem=""
+			self.ignoreminetime=0
+			self.ignoreminetimer=200
+			self.ignoreminechange=0
+			self.taskstep=0
+			aliveai.rndwalk(self,false)				-- stop rnd walking
+		end
 		if self.path and self.done=="" and self.tmpgoto then			-- path
 			aliveai.path(self)
 			self.tmpgoto=self.tmpgoto+1

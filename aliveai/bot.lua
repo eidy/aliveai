@@ -1,12 +1,19 @@
-﻿aliveai.bot=function(self, dtime)
+﻿
+
+
+aliveai.bot=function(self, dtime)
+	aliveai.bots_delay=aliveai.bots_delay+dtime
 	self.timer=self.timer+dtime
 	self.timerfalling=self.timerfalling+dtime
 	if self.timerfalling>0.2 then aliveai.falling(self) end
 	if self.turnlook and aliveai.turnlook(self,dtime) then return self end
 	if self.timer<=self.time then return self end
 	self.timer=0
+	if aliveai.bots_delay2>aliveai.max_delay then
+		if self.old==0 or (self.old==1 and aliveai.bots_delay2>aliveai.max_delay*1.2) then aliveai.max(self) end
+		return self
+	end
 
-	if aliveai.regulate_prestandard>0 and math.random(1,aliveai.regulate_prestandard)==1 then return self end
 --betweens
 	if not aliveai.dmgbynode(self) then return self end
 	if self.step(self,dtime) or self.controlled==1 then return self end
@@ -42,19 +49,13 @@
 		return self
 	end
 --task create
-	if aliveai.enable_build==true and self.building==1 and self.task=="" and not self.home then			--setting up for build a home
-		aliveai.showstatus(self,"set up for build a home")
-		self.build_step=1
-		self.build_pos=""
-		self.task="build"
-		self.ignoremineitem=""
-		self.ignoreminetime=0
-		self.ignoreminetimer=200
-		self.ignoreminechange=0
-		self.taskstep=0
-		aliveai.rndwalk(self,false)				-- stop rnd walking
-		return self
-	end
+
+
+	if self.task1(self) then return self end
+	if self.task2(self) then return self end
+	if self.task3(self) then return self end
+	if self.task4(self) then return self end
+	if self.task5(self) then return self end
 
 	if self.task=="" then
 		aliveai.rndwalk(self)
@@ -189,16 +190,24 @@ on_rightclick=function(self, clicker,name)
 	end,
 on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 		if dir~=nil then
-			self.object:setvelocity({x = dir.x*3,y = self.object:getvelocity().y,z = dir.z*3})
+			local v={x = dir.x*3,y = self.object:getvelocity().y,z = dir.z*3}
+			self.object:setvelocity(v)
+			local r=math.random(1,99)
+			self.onpunch_r=r
+			minetest.after(1, function(self,v,r)
+					if self and self.object and self.hp>0 and self.onpunch_r==r and aliveai.samepos(aliveai.roundpos(self.object:getvelocity()),aliveai.roundpos(v)) then
+						self.object:setvelocity({x = 0,y = self.object:getvelocity().y,z = 0})
+					end
+			end, self,v,r)
 		end
-
+		local dmg=0
 		if tool_capabilities and tool_capabilities.damage_groups and tool_capabilities.damage_groups.fleshy then
 			self.hp=self.hp-tool_capabilities.damage_groups.fleshy
 			self.object:set_hp(self.hp)
+			dmg=tool_capabilities.damage_groups.fleshy
 		end
 
 		aliveai.showhp(self)
-
 		if self.object:get_hp()<=0 then
 			local pos=self.object:getpos()
 			if self.drop_dead_body==1 then
@@ -211,7 +220,7 @@ on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 			return self
 		end
 
-		self.punched(self,puncher)
+		self.punched(self,puncher,dmg)
 
 		aliveai.showhp(self)
 		if aliveai.armor and self.armor then aliveai.armor(self,{dmg=true}) end
@@ -370,6 +379,7 @@ on_step=aliveai.bot,
 	attack_players= def.attack_players or 0,
 	attack_chance= def.attack_chance or 10,
 	smartfight= def.smartfight or 1,
+	usearmor=def.usearmor or 1,
 	building= def.building or 1,
 	pickuping= def.pickuping or 1,
 	attacking= def.attacking or 0,
@@ -399,6 +409,11 @@ on_step=aliveai.bot,
 	on_meet= def.on_meet or aliveai.do_nothing,
 	step= def.on_step or aliveai.do_nothing,
 	on_dig= def.on_dig or aliveai.do_nothing,
+	task1= def.task1 or aliveai.task_build,
+	task2= def.task2 or aliveai.task_stay_at_home,
+	task3= def.task3 or aliveai.do_nothing,
+	task4= def.task4 or aliveai.do_nothing,
+	task5= def.task5 or aliveai.do_nothing,
 })
 
 def.spawn_in= def.spawn_in or "air"

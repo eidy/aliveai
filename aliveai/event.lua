@@ -52,8 +52,6 @@
 	end
 end
 
-
-
 aliveai.steal=function(self,ste)
 	local known=aliveai.getknown(self,ste)
 	if known=="member" or not ste:is_player() then return self end
@@ -80,7 +78,6 @@ aliveai.steal=function(self,ste)
 		return self
 	end
 end
-
 
 aliveai.light=function(self)
 	if self.gotolight and self.path then
@@ -121,9 +118,6 @@ aliveai.light=function(self)
 	local light=l
 	local lightpos
 	local traped=false
-
-
-
 	for r = 1, radius do
 		if traped and self.lightdamage==1 and ((self.light>0 and pos.y<0) or (self.light<0 and pos.y>0)) then
 			local posl=self.object:getpos()
@@ -152,7 +146,7 @@ aliveai.light=function(self)
 	if  y==-r or y==r or x==-r or x==r or z==-r or z==r then
 		local p={x=pos.x+x,y=pos.y+y,z=pos.z+z}
 		local node=minetest.get_node(p)
-		if not (node and node.name and minetest.registered_nodes[node.name]) then return nil end
+		if not minetest.registered_nodes[node.name] then return nil end
 		if minetest.registered_nodes[node.name].walkable==false then
 			traped=false
 			local p2={x=pos.x+x,y=pos.y+y-1,z=pos.z+z}
@@ -160,7 +154,7 @@ aliveai.light=function(self)
 			local node2=minetest.get_node(p2)
 			local node3=minetest.get_node(p3)
 			local l2=minetest.get_node_light(p)
-			if not (node2 and node3 and minetest.registered_nodes[node2] and minetest.registered_nodes[node3]) then return end
+			if not (minetest.registered_nodes[node2.name] and minetest.registered_nodes[node3.name]) then return end
 			if ((self.light>0 and l2>light) or (self.light<0 and l2<light))
 			and minetest.registered_nodes[node2.name].walkable 
 			and minetest.registered_nodes[node3.name].walkable==false
@@ -183,10 +177,18 @@ aliveai.light=function(self)
 
 	if not lightpos then
 		if self.lightdamage==1 and ((self.light>0 and pos.y<0) or (self.light<0 and pos.y>0)) then
-			aliveai.punch(self,self.object,1) 
+			aliveai.punch(self,self.object,1)
+		end
+		if self.lightdamage==0 or aliveai.enable_build==false then return self end
+		for i, v in pairs(self.inv) do
+			if minetest.registered_nodes[i] and minetest.registered_nodes[i].light_source>0 then
+				aliveai.place(self,pos,i)
+				return self
+			end
 		end
 		return nil
 	end
+
 	local path=aliveai.creatpath(self,pos,lightpos,nil,true)
 	if path then
 		aliveai.showstatus(self,"go to light: " .. olight .." " .. light)
@@ -196,7 +198,6 @@ aliveai.light=function(self)
 		return self
 	end
 end
-
 
 aliveai.searchhelp=function(self)
 	if self.coming==1 then
@@ -218,8 +219,6 @@ aliveai.searchhelp=function(self)
 		return self
 	end
 end
-
-
 
 aliveai.searchobjects=function(self)
 		local pos=self.object:getpos()
@@ -278,7 +277,6 @@ aliveai.searchobjects=function(self)
 
 end
 
-
 aliveai.known=function(self,ob,typ)
 	if not ob then return end
 	if not self.known then self.known={} end
@@ -318,7 +316,7 @@ aliveai.come=function(self)
 		if self.zeal<=0 then self.zeal=nil self.come=nil end
 	elseif self.coming==1 and not self.come and math.random(1,40)==1 then
 		local pos=aliveai.roundpos(self.object:getpos())
-		for _, ob in ipairs(minetest.get_objects_inside_radius(pos, 100)) do
+		for _, ob in ipairs(minetest.get_objects_inside_radius(pos, 50)) do
 			local en=ob:get_luaentity()
 			if en and en.aliveai and en.botname~=self.botname and en.team==self.team then
 			if aliveai.distance(self,ob:getpos())<self.distance then
@@ -358,7 +356,7 @@ aliveai.come=function(self)
 			self.done=""
 		end
 -- search
-		if d<100 and self.zeal>0 then
+		if d<50 and self.zeal>0 then
 			if see then
 -- walking to
 				aliveai.rndwalk(self,false)
@@ -700,7 +698,6 @@ aliveai.findspace=function(self)
 	return self
 end
 
-
 aliveai.build=function(self)
 	if not self.build then
 		return self
@@ -824,8 +821,6 @@ aliveai.build=function(self)
 	return self
 end
 
-
-
 aliveai.buildproblem=function(self)
 	self.rnd=self.rnd+1
 	if aliveai.distance(self,self.build.path[self.build_step].pos)<=self.arm then -- if near the node
@@ -851,7 +846,6 @@ aliveai.buildproblem=function(self)
 	aliveai.rndwalk(self)
 	return self
 end
-
 
 aliveai.mineproblem=function(self)
 	if not self.ignoreminechange then

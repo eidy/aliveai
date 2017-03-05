@@ -10,11 +10,11 @@ s/down + JUMP = JUMPx2
 jump = jump
 
 hold use/leftclick = use bot tool (if it have one)
-hold use/leftclick with controller on block = bot dig
-place/rightclick with controller on block = place block (if the bot have as you have, left side of the controller)
+hold use/leftclick controller on block = bot dig
+place/rightclick with controller on block = place selected block (or jump and place controler to sellect again)
 
-punch with controller = bot punch
-punch with controller on item = bot picks up
+punch controller = bot punch
+punch controller on item = bot picks up
 
 D/right & S/left = toggle bot self control
 

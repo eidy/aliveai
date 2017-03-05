@@ -7,6 +7,12 @@ aliveai.savedata.clone=function(self)
 	if self.natural_monster then
 		return {t1=self.t1,t2=self.t2,t3=self.t3,natural_monster=1,consists=self.consists}
 	end
+
+	if self.killed and self.body then
+		return {body=self.body,killed=self.killed,hp_max=self.hp_max}
+	end
+
+
 end
 
 aliveai.loaddata.clone=function(self,r)
@@ -19,6 +25,11 @@ aliveai.loaddata.clone=function(self,r)
 		self.t3=r.t3
 		self.natural_monster=1
 		self.consists=r.consists
+	end
+	if r.killed and r.body then
+		self.body=r.body
+		self.killed=1
+		self.hp_max=r.hp_max
 	end
 	return self
 end
@@ -92,7 +103,6 @@ aliveai.create_bot({
 		light=0,
 		building=0,
 		escape=0,
-		--start_with_items={["default:snowblock"]=1,["default:ice"]=4},
 		type="monster",
 		dmg=0,
 		hp=100,
@@ -200,14 +210,11 @@ aliveai.create_bot({
 				self.aliveai_ice=1
 				local radius=10
 				aliveai_nitroglycerine.explode(pos,{
-					--drops=0,
-					--velocity=0,
 					radius=radius,
 					hurt=0,
 					place={"default:snowblock","default:ice","default:snowblock"},
 					place_chance=2,
 				})
-
 				for _, ob in ipairs(minetest.get_objects_inside_radius(pos, radius*2)) do
 					local pos2=ob:getpos()
 					local d=math.max(1,vector.distance(pos,pos2))
@@ -217,7 +224,7 @@ aliveai.create_bot({
 						if ob:get_hp()<=dmg+5 then
 							aliveai_nitroglycerine.freeze(ob)
 						else
-							ob:punch(self.object,1,{full_punch_interval=1,damage_groups={fleshy=dmg}},nil)
+							ob:punch(self.object,1,{full_punch_interval=1,damage_groups={fleshy=dmg}})
 						end
 					end
 				end
@@ -1051,7 +1058,7 @@ aliveai.create_bot({
 		name_color="",
 		collisionbox={-0.5,-0.5,-0.5,0.5,0.5,0.5},
 		visual="cube",
-		basey=0.5,
+		basey=-0.5,
 		drop_dead_body=0,
 		escape=0,
 		spawn_on={"group:sand","group:soil","default:snow","default:snowblock","default:ice","group:leaves","group:tree","group:stone","group:cracky","group:level","group:crumbly","group:choppy"},
@@ -1111,15 +1118,12 @@ aliveai.create_bot({
 			if not (ta and pos) then return end
 			aliveai.stand(self)
 			aliveai.lookat(self,ta)
-			local e=minetest.add_item({x=pos.x,y=pos.y+0.5,z=pos.z},self.consists)
-			local vc = {x = pos.x - ta.x, y = pos.y - ta.y+1, z = pos.z - ta.z}
-			local amount = (vc.x ^ 2 + vc.y ^ 2 + vc.z ^ 2) ^ 0.25
-			local v = -15
-			if self.fight:is_player() then vc.y = vc.y -1 end
-			vc.x = vc.x * v / amount
-			vc.y = vc.y * v / amount
-			vc.z = vc.z * v / amount
+
+			local e=minetest.add_item({x=pos.x,y=pos.y,z=pos.z},self.consists)
+			local dir=aliveai.get_dir(self,ta)
+			local vc = {x = dir.x*30, y = dir.y*30, z = dir.z*30}
 			e:setvelocity(vc)
+
 			e:get_luaentity().age=(tonumber(minetest.setting_get("item_entity_ttl")) or 900)-2
 			table.insert(aliveai_threats.debris,{ob=e,n=self.botname})
 			return self
@@ -1151,3 +1155,133 @@ aliveai.create_bot({
 		})
 	end
 })
+
+aliveai.create_bot({
+		type="npc",
+		name="stubborn_monster",
+		texture="aliveai_threats_stubborn_monster.png",
+		hp=20,
+		drop_dead_body=0,
+		usearmor=0,
+	on_load=function(self)
+		if not self.body or self.killed then self.on_spawn(self) return self end
+		local s={}
+		local c=""
+		local t=""
+		for i,v in ipairs(self.body) do
+			s["s"..v]=v
+			if i>1 then c="^" end
+			t=t .. c.. "aliveai_threats_stubborn_monster" .. v ..".png"
+		end
+		self.object:set_properties({
+				mesh = aliveai.character_model,
+				textures = {t,"aliveai_threats_i.png","aliveai_threats_i.png"},
+		})
+		if not s["s3"] then 
+			self.object:set_properties({
+				mesh = aliveai.character_model,
+				collisionbox={-0.3,-0.3,-0.3,0.3,0.7,0.3},
+			})
+			self.basey=-0.5 
+		end
+		if not s["s4"] then self.nhead=true end
+		self.on_spawn(self)
+	end,
+	on_spawn=function(self)
+		if not self.body then
+			self.body={1,2,3,4}
+		end
+		self.hp2=self.object:get_hp()
+		self.deadtimer=10
+		self.hurted=0
+		if self.killed then
+			self.attack_players=1
+			self.attacking=1
+			self.team="stubborn"
+			self.talking=0
+			self.light=0
+			self.building=0
+			self.type="monster"
+			self.escape=0
+			self.attack_chance=1
+			self.smartfight=0
+		end
+
+	end,
+	on_step=function(self,dtime)
+		if self.dead then
+			self.time=self.otime
+			self.deadtimer=self.deadtimer-1
+			if self.deadtimer<0 then 
+				self.object:punch(self.object,1,{full_punch_interval=1,damage_groups={fleshy=self.hp*2}},nil)
+			end
+			return self
+		end
+
+		if self.lay then
+			self.time=self.otime
+			if math.random(0,5)==1 then
+				if self.basey==-0.5 then self.object:set_properties({mesh = aliveai.character_model,collisionbox={-0.3,-0.3,-0.3,0.3,0.7,0.3}}) end
+				aliveai.anim(self,"stand")
+				self.lay=nil
+			end
+			return self
+		end
+		if self.nhead then
+			self.fight=nil
+			self.fly=nil
+			self.temper=0
+			self.come=nil
+		end
+	end,
+	on_punched=function(self,puncher,h)
+		self.hurted=h
+	end,
+	on_death=function(self,puncher,pos)
+		local r=math.random(1,5)
+		if r>4 then
+			if self.basey==-0.5 then self.object:set_properties({mesh = aliveai.character_model,collisionbox={-0.35,-1.0,-0.35,0.35,0.8,0.35}}) local pos=self.object:getpos() self.object:setpos({x=pos.x,y=pos.y+1,z=pos.z}) end
+			aliveai.anim(self,"lay")
+			self.lay=true
+		end
+
+		if r<3 or not self.killed then
+			r=math.random(1,4)
+			table.remove(self.body,r)
+			local t=""
+			local c=""
+			local col=self.object:get_properties().collisionbox
+			local c2=0
+			for i,v in ipairs(self.body) do
+				if i>1 then c="^" end
+				t=t .. c.. "aliveai_threats_stubborn_monster" .. v ..".png"
+				c2=i
+			end
+			if r==3 then self.basey=-0.5 col={-0.3,-0.3,-0.3,0.3,0.7,0.3} end
+			self.object:set_properties({
+				mesh = aliveai.character_model,
+				textures = {t,"aliveai_threats_i.png","aliveai_threats_i.png"},
+				collisionbox=col,
+			})
+			if r==1 or c2==1 or self.hurted>self.hp_max then
+				if self.basey==-0.5 then self.object:set_properties({mesh = aliveai.character_model,collisionbox={-0.35,-1.0,-0.35,0.35,0.8,0.35}}) local pos=self.object:getpos() self.object:setpos({x=pos.x,y=pos.y+1,z=pos.z}) end
+				aliveai.anim(self,"lay")
+				self.object:set_hp(self.hp_max)
+				self.hp=self.hp_max
+				self.dead=true
+				return self
+			end
+			if r==4 then self.nhead=true end
+			if not self.killed then
+				self.killed=1
+				self.on_spawn(self)
+			end
+		end
+		if not self.dead then
+			self.hp_max=self.hp_max-2
+			self.object:set_hp(self.hp_max)
+			self.hp=self.hp_max
+		end
+	end
+})
+

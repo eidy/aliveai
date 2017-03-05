@@ -13,7 +13,6 @@ aliveai.namecut=function(name,group)-- return name to cut or cut to group
 	return name
 end
 
-
 aliveai.generate_house=function(self)
 	local gen=true
 	if self.x and self.y and self.z and not self.aliveai then
@@ -172,8 +171,7 @@ aliveai.generate_house=function(self)
 	return self
 end
 
--- needed craft stuff to search or groups
-aliveai.crafttoneed=function(self,a,group_only,neednum)
+aliveai.crafttoneed=function(self,a,group_only,neednum)-- needed craft stuff to search or groups
 -- search group
 	if string.find(a,"group:",1)~=nil then
 		local g=a.split(a,":")
@@ -265,8 +263,6 @@ aliveai.form=function(name,text)
 	end
 end
 
-
-
 minetest.register_on_player_receive_fields(function(player, form, pressed)
 	if form=="aliveai.buildxy" and pressed.set then
 		local name=player:get_player_name()
@@ -294,7 +290,6 @@ minetest.register_on_player_receive_fields(function(player, form, pressed)
 			if pressed.n then
 				local n=tonumber(pressed.n)
 				if n==nil then n=1 end
-				if n>aliveai.max_num then n=aliveai.max_num end
 				meta:set_int("n",n)
 			end
 			if pressed.time then
@@ -328,7 +323,6 @@ minetest.register_on_player_receive_fields(function(player, form, pressed)
 		end
 	end
 end)
-
 
 aliveai.spawnerform=function(player,pos)
 	local meta=minetest.get_meta(pos)
@@ -376,7 +370,6 @@ aliveai.spawnerform=function(player,pos)
 		return minetest.show_formspec(player:get_player_name(), "aliveai.spawnerform",gui)
 	end, gui)
 end
-
 
 minetest.register_node("aliveai:spawner", {
 	description = "aliveai spawner",
@@ -479,12 +472,10 @@ minetest.register_node("aliveai:spawner", {
 	}}
 })
 
-
 local paths={
 {0.2,"bubble.png^[colorize:#0000ffff"},
 {0.2,"bubble.png^[colorize:#ffff00ff"},
 {0.5,"bubble.png^[colorize:#00ff00ff"}}
-
 
 for i=1,3,1 do
 minetest.register_entity("aliveai:path" .. i,{
