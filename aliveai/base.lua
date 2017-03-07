@@ -1,6 +1,6 @@
 ﻿aliveai.gethp=function(ob)		-- because some mods are remaking mobs health system, like mobs redo
 	if not ob then return 0 end
-	local h=ob:get_hp()
+	local h=ob:get_hp() 
 	if ob:get_luaentity() then
 		if ob:get_luaentity().health then h=ob:get_luaentity().health end
 		if ob:get_luaentity().hp then h=ob:get_luaentity().hp end
@@ -740,7 +740,6 @@ aliveai.jump=function(self,v)
 	end
 end
 
-
 aliveai.jumping=function(self)
 	local pos=self.object:getpos()
 	pos.y=pos.y-self.basey
@@ -754,8 +753,7 @@ aliveai.jumping=function(self)
 		pos.y=pos.y+2
 		local n1=minetest.registered_nodes[minetest.get_node(pos).name]
 		if n1 and n1.walkable then
-			aliveai.showstatus(self,"stuck inside block")
-			aliveai.punch(self,self.object,1)
+			aliveai.stuckinblock(self)
 		end
 		return self
 	end

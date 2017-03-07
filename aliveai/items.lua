@@ -325,7 +325,8 @@ aliveai.dig=function(self,pos)
 -- have inventory/owned
 		local meta = minetest.get_meta(pos)
 		local inv = meta:get_inventory()
-		if meta:get_string("owner")=="" or meta:get_string("owner")==self.botname then
+		local owner=meta:get_string("owner")
+		if owner=="" or owner==self.botname then
 			if inv and not inv:is_empty("main") then
 				for i=1,inv:get_size("main"),1 do
 					local it=inv:get_stack("main",i):get_name()
@@ -336,6 +337,7 @@ aliveai.dig=function(self,pos)
 			end
 		else
 			aliveai.ignorenode(self,pos)
+			return false
 		end
 --dig + drops
 		local n=1
@@ -497,7 +499,8 @@ aliveai.crafting=function(self,name,norecraft,neednum)
 	name=aliveai.namecut(name,true)
 	local c=minetest.get_craft_recipe(name)
 	local n=1
-	local relist={}
+	local relist1={}
+	local relist2={}
 	local list=c.items
 	local output=c.output
 --if group or burn
@@ -535,32 +538,31 @@ aliveai.crafting=function(self,name,norecraft,neednum)
 		end
 	end
 -- collect items to remove
+	if not list then return end
 	for i, v in pairs(list) do
-		local gr=aliveai.namecut(v,true)
-		if not relist[gr] then relist[gr]=0 end
-		relist[gr]=relist[gr]+1
+		local gr=v
+		if not relist1[gr] then relist1[gr]=0 end
+		relist1[gr]=relist1[gr]+1
 	end
+	if not relist1 then return end
 -- check if list can be removed, or try to craft
 	local nothaveall=false
-	for i, v in pairs(relist) do
-		local oldre=i
-		i=aliveai.namecut(i,true)
-		if string.find(i,"group:",1)~=nil then
-		if self.need then i=aliveai.crafttoneed(self,i,true) end
-			relist[oldre]=nil
-			relist[i]=v
+	for i, v in pairs(relist1) do
+		local ii=i
+		if self.need and string.find(ii,"group:",1)~=nil then
+			ii=aliveai.crafttoneed(self,ii,true)
 		end
-
-		if not aliveai.invhave(self,i,v) then
+		if not aliveai.invhave(self,ii,v) then
 			local getc
-			if self.need then getc=aliveai.crafttoneed(self,i,false,v) end
+			if self.need then getc=aliveai.crafttoneed(self,ii,false,v) end
 			if getc then aliveai.crafting(self,getc,norecraft,v) end
 			nothaveall=true
 		end
+		relist2[ii]=v
 	end
-	if nothaveall then return self end
+	if nothaveall or not relist2 then return self end
 -- remove list
-	for i, v in pairs(relist) do
+	for i, v in pairs(relist2) do
 		if self.inv[i]==nil then
 			for ii, vv in pairs(self.inv) do
 				if minetest.get_item_group(ii, i)>0 or minetest.get_item_group(ii, i)>0 then

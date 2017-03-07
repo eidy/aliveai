@@ -79,6 +79,7 @@ minetest.register_tool("aliveai_minecontroller:controller", {
 			e.punch=true
 		elseif pointed_thing.type=="nothing" and aliveai_minecontroller.users[username] and aliveai_minecontroller.users[username].mobs then
 			local e=aliveai_minecontroller.users[username]
+			if not e.ob or e.ob:get_luaentity() then return end
 			if e.mob_restore then
 				e.ob:get_luaentity().type=e.mob_restore.type
 				e.ob:get_luaentity().team=e.mob_restore.team

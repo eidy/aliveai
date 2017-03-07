@@ -1,4 +1,44 @@
-﻿aliveai.need_helper=function(self)
+﻿aliveai.stuckinblock=function(self)
+	local posl=self.object:getpos()
+	local n=minetest.get_node({x=posl.x,y=posl.y,z=posl.z})
+	local stuck=1
+	local p2={}
+	local arm=math.floor(self.arm)+1
+	self.object:setyaw(math.random(0,6.28))
+	aliveai.walk(self)
+	if minetest.registered_nodes[n.name] and minetest.registered_nodes[n.name].walkable then
+		local p
+		for i=1,arm,1 do
+			p={x=posl.x,y=posl.y+i,z=posl.z}
+			n=minetest.get_node(p)
+			local n2=minetest.registered_nodes[n.name]
+			if (i==arm and n2 and n2.walkable) or minetest.is_protected(p,"") or minetest.get_meta(p):get_string("owner")~="" then
+				stuck=2
+			elseif n2 and n2.walkable then
+				p2[i]=p
+			elseif n2 and not n2.walkable then
+				break
+			end
+		end
+	end
+	if stuck==1 then
+		for i=1,#p2,1 do
+			if not aliveai.dig(self,p2[i]) then
+				stuck=2
+				break
+			end
+		end
+	end
+	if stuck==2 then
+		aliveai.punch(self,self.object,1)
+		aliveai.showstatus(self,"stuck inside block")
+	end
+	return nil
+end
+
+
+
+aliveai.need_helper=function(self)
 	if self.help_need then
 		if self.done=="come" then
 			self.done=""
@@ -120,24 +160,7 @@ aliveai.light=function(self)
 	local traped=false
 	for r = 1, radius do
 		if traped and self.lightdamage==1 and ((self.light>0 and pos.y<0) or (self.light<0 and pos.y>0)) then
-			local posl=self.object:getpos()
-			local n=minetest.get_node({x=posl.x,y=posl.y-1,z=posl.z})
-			if minetest.registered_nodes[n.name] and minetest.registered_nodes[n.name].walkable then
-				local p
-				for i=1,math.floor(self.arm)+1,1 do
-					p={x=posl.x,y=posl.y+i,z=posl.z}
-					n=minetest.get_node(p)
-					if minetest.registered_nodes[n.name] and minetest.registered_nodes[n.name].walkable then
-						aliveai.dig(self,p)
-						return
-					else
-						aliveai.punch(self,self.object,1) 
-						return
-					end
-				end
-			end
-			aliveai.punch(self,self.object,1) 
-			return nil
+			aliveai.stuckinblock(self)
 		end
 		traped=true
 	for y = -r, r do
@@ -154,6 +177,7 @@ aliveai.light=function(self)
 			local node2=minetest.get_node(p2)
 			local node3=minetest.get_node(p3)
 			local l2=minetest.get_node_light(p)
+			if not (self.light and light and l2) then return end
 			if not (minetest.registered_nodes[node2.name] and minetest.registered_nodes[node3.name]) then return end
 			if ((self.light>0 and l2>light) or (self.light<0 and l2<light))
 			and minetest.registered_nodes[node2.name].walkable 
@@ -283,10 +307,12 @@ aliveai.known=function(self,ob,typ)
 	local name
 	if ob:is_player() then 
 		name=ob:get_player_name()
-	elseif ob:get_luaentity().aliveai and ob:get_luaentity().botname then
+	elseif ob:get_luaentity() and ob:get_luaentity().aliveai and ob:get_luaentity().botname then
 		name=ob:get_luaentity().botname
-	else
+	elseif ob:get_luaentity() then
 		name=ob:get_luaentity().name
+	else
+		return ""
 	end
 	if typ~="" then
 		self.known[name]=typ
@@ -301,10 +327,12 @@ aliveai.getknown=function(self,ob,typ)
 	local name
 	if ob:is_player() then 
 		name=ob:get_player_name()
-	elseif ob:get_luaentity().aliveai and ob:get_luaentity().botname then
+	elseif ob:get_luaentity() and ob:get_luaentity().aliveai and ob:get_luaentity().botname then
 		name=ob:get_luaentity().botname
-	else
+	elseif ob:get_luaentity() then
 		name=ob:get_luaentity().name
+	else
+		return ""
 	end
 	if not typ then return self.known[name] end
 	return self.known[name]==typ
