@@ -637,10 +637,15 @@ aliveai.fight=function(self)
 							aliveai.searchhelp(self)
 						end
 						return self
-					elseif self.smartfight==1 then
+					elseif self.smartfight==1 and self.temper>1 then
 						local yaw=self.object:getyaw()
 						aliveai.lookat(self,fpos)
-						self.object:setyaw(math.random(yaw*0.5,yaw*1.5))
+						local r1=yaw*0.5
+						local r2=yaw*1.5
+						if r1==0 then r2=-0.3 end
+						if r2==0 then r2=0.3 end
+						local r3=math.random(r1,r2)
+						self.object:setyaw(r3)
 						aliveai.walk(self,2)
 						if math.random(1,3)==1 and self.object:getvelocity().y==0 then
 							self.object:setvelocity({x = self.move.x*4, y = 5.2, z =self.move.z*4})
