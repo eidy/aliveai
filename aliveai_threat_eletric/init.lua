@@ -131,7 +131,7 @@ minetest.register_tool("aliveai_threat_eletric:core", {
 })
 
 aliveai_threat_eletric.lighthit=function(level,ob,user)
-	local dmg=math.random(5)
+	local dmg=math.random(1,5)
 	local hp=ob:get_hp()
 	local en=0
 	if ob:get_luaentity() then en=1 end
@@ -140,7 +140,7 @@ aliveai_threat_eletric.lighthit=function(level,ob,user)
 			ob:setvelocity({x=0, y=0, z=0})
 		end
 		hp=hp-level
-		local time=math.random(10)*0.1
+		local time=math.random(1,10)*0.1
 		if ob:get_hp()<=0 then return false end
 		minetest.after((i*0.3)+time, function(ob,user)
 		if ob==nil or ob:get_hp()<=0 then return false end
@@ -184,7 +184,7 @@ on_construct=function(pos)
 		minetest.get_node_timer(pos):start(1)
 	end,
 on_timer=function(pos, elapsed)
-		local rnd=math.random(3)
+		local rnd=math.random(1,3)
 		local sp=0
 	for i, ob in pairs(minetest.get_objects_inside_radius(pos, 3)) do
 		local p=ob:getpos()

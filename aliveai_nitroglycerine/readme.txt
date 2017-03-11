@@ -1,6 +1,6 @@
 ﻿Version: 1
 name: nitroglycerine
-By: UjEdwin
+By: AiTechEye
 
 powerful explosion / nitrogen api
 

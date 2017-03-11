@@ -39,8 +39,8 @@ aliveai_nitroglycerine.explode=function(pos,node)
 				data[v]=node.set
 			end
 
-			if math.random(1,node.place_chance)==1 then
-				data[v]=nodes[math.random(1,nodes_n)]
+			if aliveai.random(1,node.place_chance)==1 then
+				data[v]=nodes[aliveai.random(1,nodes_n)]
 			end
 
 			if node.drops==1 and data[v]==air and math.random(1,4)==1 then

@@ -244,6 +244,45 @@ aliveai.searchhelp=function(self)
 	end
 end
 
+
+
+
+aliveai.seen_dead=function(self)
+	if not self.distance then return end
+	if self.dead_by and not (self.dead_by:get_luaentity() or self.dead_by:is_player()) then self.dead_by=nil end
+	local pos=self.object:getpos()
+	for _, ob in ipairs(minetest.get_objects_inside_radius(pos, self.distance)) do
+		local en=ob:get_luaentity()
+		if en and en.aliveai and en.type~="" and en.fight==nil and en.fly==nil and en.team==self.team and aliveai.visiable(self,ob) then
+			if self.dead_by and en.fighting==1 and aliveai.visiable(en,self.dead_by) and aliveai.viewfield(en,self.dead_by) then
+				en.temper=1
+				en.fight=self.dead_by
+				en.on_detect_enemy(en,en.fight)
+				if math.random(1,3)==1 then
+					aliveai.say(en,"murder!")
+				end
+			elseif en.escape==1 and math.random(1,3)==1 then
+				en.temper=-1
+				en.fly=self.object
+				en.on_escaping(en,en.fly)
+				if math.random(1,3)==1 then
+					aliveai.sayrnd(en,"ahh")
+				end
+			else
+				aliveai.lookat(en,self.object:getpos())
+				aliveai.walk(en)
+				en.zeal=2
+				en.come=self.object
+				if math.random(1,3)==1 then
+					aliveai.sayrnd(en,"its dead!")
+				end
+			end
+		end
+	end
+	return self
+end
+
+
 aliveai.searchobjects=function(self)
 		local pos=self.object:getpos()
 		local d=aliveai.distance(self,pos)
@@ -261,7 +300,7 @@ aliveai.searchobjects=function(self)
 				end
 				local en=ob:get_luaentity()
 				if ob and ob:getpos() and aliveai.visiable(self,ob:getpos()) and aliveai.viewfield(self,ob) and ob:is_player()
-				or (en and en.object and en.itemstring==nil and en.type~="" and not (en.botname==self.botname or en.team==self.team)) then
+				or (en and en.object and en.itemstring==nil and en.type~="" and en.team~=self.team and en.botname~=self.botname) then
 					local known=aliveai.getknown(self,ob)
 					local enemy
 					if en and en.type=="monster" then
@@ -520,15 +559,15 @@ aliveai.fly=function(self)
 				end
 			end
 			local r={}
-			r[1]=math.random(yaw-2.5,yaw)
-			r[2]=math.random(yaw,yaw+2.5)
-			self.object:setyaw(r[math.random(1,2)])
+			r[1]=aliveai.random(yaw-2.5,yaw)
+			r[2]=aliveai.random(yaw,yaw+2.5)
+			self.object:setyaw(r[aliveai.random(1,2)])
 			aliveai.walk(self,2)
 			return self
 		end
 		return self
 	elseif self.attacking==1 or not (self.fight or self.fly or self.come) then
-		if math.random(1,self.attack_chance)==1 then
+		if aliveai.random(1,self.attack_chance)==1 then
 			aliveai.searchobjects(self)
 		end
 	end
@@ -601,7 +640,7 @@ aliveai.fight=function(self)
 				if d>self.arm and vy>-2 then
 					aliveai.lookat(self,fpos)
 					aliveai.walk(self,2)
-					if self.tool_see==1 and math.random(1,self.tool_chance)==1 then
+					if self.tool_see==1 and aliveai.random(1,self.tool_chance)==1 then
 						aliveai.use(self)
 					end
 					aliveai.showstatus(self,"attack",1)
@@ -615,9 +654,9 @@ aliveai.fight=function(self)
 					aliveai.stand(self)
 					aliveai.lookat(self,fpos)
 					self.on_fighting(self,self.fight)
-					if math.random(1,math.floor(6-self.temper)+0.5)==1 then
+					if aliveai.random(1,math.floor(6-self.temper)+0.5)==1 then
 						self.on_punching(self,self.fight)
-						if self.tool_near==1 and math.random(1,self.tool_chance)==1 then
+						if self.tool_near==1 and aliveai.random(1,self.tool_chance)==1 then
 							aliveai.use(self)
 						else
 							aliveai.anim(self,"mine")
@@ -640,12 +679,7 @@ aliveai.fight=function(self)
 					elseif self.smartfight==1 and self.temper>1 then
 						local yaw=self.object:getyaw()
 						aliveai.lookat(self,fpos)
-						local r1=yaw*0.5
-						local r2=yaw*1.5
-						if r1==0 then r2=-0.3 end
-						if r2==0 then r2=0.3 end
-						local r3=math.random(r1,r2)
-						self.object:setyaw(r3)
+						self.object:setyaw(aliveai.random(yaw*0.5,yaw*1.5))
 						aliveai.walk(self,2)
 						if math.random(1,3)==1 and self.object:getvelocity().y==0 then
 							self.object:setvelocity({x = self.move.x*4, y = 5.2, z =self.move.z*4})
@@ -903,7 +937,7 @@ aliveai.mineproblem=function(self)
 			self.ignore_item[self.ignoremineitem]=1
 			self.need[self.ignoremineitem]=nil
 			aliveai.showstatus(self,"ignoring item: " .. self.ignoremineitem)
-			if aliveai.getlength(self.need)==0 then self.need=nil end
+			if #self.need==0 then self.need=nil end
 		end
 		self.ignoreminetime=0
 		self.ignoremineitem=""

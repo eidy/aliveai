@@ -1,5 +1,5 @@
 ﻿By AiTechEye
-Version: 3.935
+Version: 3.95
 Licenses: code and media CC0
 
 Alive AI
@@ -131,6 +131,7 @@ hurts_by_light	1	(hurts when inside light, and depends on its position, like stu
 annoyed_by_staring 1	(attacks objects if them are near it after a while)
 drowning		1
 usearmor		1	use the armor and wieldview
+kill_deep_falling	1	kills the bot, when they are falling and becomes inactivated
 
 on_step=function(self,dtime)
 	return self

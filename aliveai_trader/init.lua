@@ -73,7 +73,7 @@ aliveai.create_bot({
 					if math.random(1,20)==1 and not self.trader_inventory[i] and minetest.get_item_group(i, "not_in_creative_inventory")==0 and minetest.get_all_craft_recipes(i) then
 						count=count+1
 						c=math.random(5,20)
-						if v.stack_max<10 then c=math.random(1,v.stack_max) end
+						if v.stack_max<10 then c=aliveai.random(1,v.stack_max) end
 						self.trader[i]=c
 						if count>=10 then return self end
 					end

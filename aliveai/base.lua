@@ -1,4 +1,32 @@
-﻿aliveai.gethp=function(ob)		-- because some mods are remaking mobs health system, like mobs redo
+﻿aliveai.random=function(a,b)
+	if type(b)~="number" or type(a)~="number" then
+		a=0
+		b=1
+	end
+	if a>=b then b=a+0.1 end
+	return math.random(a,b)
+end
+
+aliveai.is_bot=function(ob)
+	return (ob and ob:get_luaentity() and ob:get_luaentity().aliveai)
+end
+
+aliveai.get_bot_name=function(ob)
+	if not (ob and ob:get_luaentity() and ob:get_luaentity().aliveai) then return "" end
+	return ob:get_luaentity().botname
+end
+
+aliveai.get_bot_by_name=function(name)
+	for i,v in pairs(aliveai.active) do
+		if v:get_luaentity() and v:get_luaentity().botname==name then
+			return v
+		end
+	end
+	return
+end
+
+
+aliveai.gethp=function(ob)		-- because some mods are remaking mobs health system, like mobs redo
 	if not ob then return 0 end
 	local h=ob:get_hp() 
 	if ob:get_luaentity() then
@@ -412,15 +440,6 @@ aliveai.checkarea=function(pos,node_name,pxz,py)
 
 end
 
-aliveai.getlength=function(a)
-	if a==nil then return 0 end
-	local n=0
-	for _ in pairs(a) do
-		n=n+1
-	end
-	return n
-end
-
 aliveai.rndwalk=function(self,toogle)
 	if toogle==nil then toogle=true end
 	self.isrnd=toogle
@@ -434,7 +453,7 @@ aliveai.rndwalk=function(self,toogle)
 	if self.falllook then
 		self.falllook.times=self.falllook.times-1
 		if not self.falllook.ignore then
-			local r=math.random(1, self.falllook.n)
+			local r=aliveai.random(1, self.falllook.n)
 			if rnd<2 then
 				local yaw=self.falllook[r]
 				if type(yaw)~="number" then yaw=0 end
@@ -468,6 +487,8 @@ aliveai.rndwalk=function(self,toogle)
 		if self.falllook.times<=0 then self.falllook=nil end
 	end
 -- normal rnd
+
+	if math.random(1,200)==1 then aliveai.sayrnd(self,"beautiful weather") end
 	if rnd==0 then
 		aliveai.lookat(self,math.random(0,6.28),true)
 		aliveai.stand(self)
@@ -495,7 +516,7 @@ aliveai.rndwalk=function(self,toogle)
 		elseif self.annoyed_by_staring==1 then
 			for _, ob in ipairs(minetest.get_objects_inside_radius(pos, self.arm)) do
 				if math.random(1,2)==1 and ob and ob:getpos() and aliveai.visiable(self,ob:getpos())  then
-					if self.stealing==1 and math.random(1,self.steal_chance)==1 then aliveai.steal(self,ob) return self end
+					if self.stealing==1 and aliveai.random(1,self.steal_chance)==1 then aliveai.steal(self,ob) return self end
 					if ob:get_luaentity() and not (ob:get_luaentity().name=="" or (ob:get_luaentity().aliveai and ob:get_luaentity().botname==self.botname)) then
 						self.staring={}
 						self.staring.name=ob:get_luaentity().name
@@ -578,7 +599,7 @@ aliveai.falling=function(self)
 -- if unknown
 	local test2=minetest.registered_nodes[node2.name]
 	local test=minetest.registered_nodes[node.name]
-	if not test or not test2 then return nil end
+	if not (test and test2) then return nil end
 --water
 	if test2.liquid_viscosity>0 then
 		self.floating=true
@@ -596,7 +617,6 @@ aliveai.falling=function(self)
 			aliveai.punch(self,self.object,1)
 		elseif self.air then
 			self.air=self.air+0.1
-
 		end
 		return self
 -- ladder
@@ -659,10 +679,21 @@ aliveai.falling=function(self)
 		if self.object:getvelocity().y==0 then
 			local from=math.floor(self.fallingfrom+0.5)
 			local hit=math.floor(pos.y+0.5)
+			self.isfalling=nil
 			local d=from-hit
 			self.fallingfrom=nil
 			if d>=self.avoidy then
 				aliveai.punch(self,self.object,d)
+			end
+		else
+			if not self.isfalling then
+				local from=math.floor(self.fallingfrom+0.5)
+				local hit=math.floor(pos.y+0.5)
+				local d=from-hit
+				if d>=self.avoidy then
+					self.isfalling=1
+					aliveai.sayrnd(self,"AHHH")
+				end
 			end
 		end
 	end
@@ -674,7 +705,8 @@ aliveai.falling=function(self)
 		local dmg=false
 		for i=1,self.avoidy*-1,-1 do
 			local nnode=minetest.registered_nodes[minetest.get_node({x=pos.x+self.move.x,y=pos.y+i,z=pos.z+self.move.z}).name]
-			if nnode and nnode.damage_per_second>0 then dmg=true break end
+			if not nnode then return end
+			if nnode.damage_per_second>0 then dmg=true break end
 			if i<0 then j[2+(i*-1)]=nnode.walkable end
 			if nnode.walkable then break end
 		end
@@ -762,7 +794,9 @@ aliveai.jumping=function(self)
 		local z=self.move.z
 		local j={}
 		for i=-2,3,1 do
-			j[i+3]=minetest.registered_nodes[minetest.get_node({x=pos.x+x,y=pos.y+i,z=pos.z+z}).name].walkable
+			local jnod=minetest.registered_nodes[minetest.get_node({x=pos.x+x,y=pos.y+i,z=pos.z+z}).name]
+			if not jnod then return end
+			j[i+3]=jnod.walkable
 		end
 -- jump x1
 		if j[3] and j[4]==false and j[5]==false then
@@ -815,9 +849,11 @@ aliveai.neartarget=function(self,p,starty,endy,stepy)
 	for y=starty,endy,stepy do
 		for i=1,8,1 do
 			last_p={x=a[i].x,y=p.y+y,z=a[i].z}
-			if minetest.registered_nodes[minetest.get_node(last_p).name].walkable==false then
-				if minetest.registered_nodes[minetest.get_node({x=a[i].x,y=p.y+y-1,z=a[i].z}).name].walkable and
-				minetest.registered_nodes[minetest.get_node({x=a[i].x,y=p.y+y+1,z=a[i].z}).name].walkable==false then
+			if minetest.registered_nodes[minetest.get_node(last_p).name] and minetest.registered_nodes[minetest.get_node(last_p).name].walkable==false then
+				local nod1=minetest.registered_nodes[minetest.get_node({x=a[i].x,y=p.y+y-1,z=a[i].z}).name]
+				local nod2=minetest.registered_nodes[minetest.get_node({x=a[i].x,y=p.y+y+1,z=a[i].z}).name]
+				if nod1 and nod1.walkable and
+				nod2 and nod2.walkable==false then
 					last_able={x=a[i].x,y=p.y+y,z=a[i].z}
 					if o.y==last_able.y then
 						aliveai.showpath(last_able,3)

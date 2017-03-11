@@ -72,7 +72,7 @@ aliveai.create_bot=function(def)
 	if not def then def={} end
 	def.name=def.name or "bot"
 	def.mod_name=minetest.get_current_modname()
-	def.spawn_y=def.spawn_y or 0
+	def.spawn_y=def.spawn_y or 1
 	if aliveai.smartshop and def.on_step==nil then def.on_step=aliveai.use_smartshop end
 	if not def.on_click then def.on_click=aliveai.give_to_bot end
 
@@ -133,6 +133,9 @@ minetest.register_entity(def.mod_name ..":" .. def.name .."_dead",{
 		aliveai.anim(self,"lay")
 		self.object:setacceleration({x=0,y=-10,z =0})
 		self.object:setvelocity({x=0,y=-3,z =0})
+		minetest.after(0.1, function(self)
+			aliveai.seen_dead(self)
+		end,self)
 		return self
 	end,
 	on_step=function(self, dtime)
@@ -163,8 +166,8 @@ minetest.register_entity(def.mod_name ..":" .. def.name .."_dead",{
 		return self
 	end,
 	time=0,
-	type="",
-	anim=""
+	type= "",
+	anim="",
 })
 end
 
@@ -189,6 +192,11 @@ on_rightclick=function(self, clicker,name)
 		self.on_click(self,clicker)
 	end,
 on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
+		local pos=self.object:getpos()
+		if minetest.get_node({x=pos.x,y=pos.y-2,z=pos.z}).name=="ignore" then
+			self.object:remove()
+			return self
+		end
 		if dir~=nil then
 			local v={x = dir.x*3,y = self.object:getvelocity().y,z = dir.z*3}
 			self.object:setvelocity(v)
@@ -206,13 +214,26 @@ on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 			self.object:set_hp(self.hp)
 			dmg=tool_capabilities.damage_groups.fleshy
 		end
-
+-- death
 		aliveai.showhp(self)
 		if self.object:get_hp()<=0 then
 			local pos=self.object:getpos()
 			if self.drop_dead_body==1 then
 				aliveai.showstatus(self,"drop dead body")
-				minetest.add_entity(pos, def.mod_name ..":" .. def.name .."_dead"):setyaw(self.object:getyaw())
+				local e=minetest.add_entity(pos, def.mod_name ..":" .. def.name .."_dead")
+				e:setyaw(self.object:getyaw())
+-- pointing out the scapegoat, or someone near
+				if puncher then
+					local by=puncher
+					local en=puncher:get_luaentity()
+					if en and en.aliveai and not en.teamkiller and self.team==en.team and en.botname~=self.botname then
+						if self.teamkiller and en and en.aliveai and en.team==self.team then en.team=en.team.."_killer" end
+						en.teamkiller=true
+						e:get_luaentity().dead_by=puncher
+						e:get_luaentity().team=self.team
+						e:get_luaentity().distance=self.distance
+					end
+				end
 			end
 			self.on_death(self,puncher,pos)
 			aliveai.invdropall(self)
@@ -256,6 +277,7 @@ on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 		return self
 	end,
 on_activate=function(self, staticdata)
+		if staticdata=="destroy_on_load" then self.object:remove() return end
 		if staticdata~="" then
 			local r=aliveai.convertdata(staticdata)
 			self.inv={}
@@ -309,11 +331,16 @@ on_activate=function(self, staticdata)
 			self.on_load(self)
 			aliveai.showstatus(self,"bot loaded")
 		end
+		self.lastitem_name="some"
+		self.lastitem_count=1
 		self.hp=self.object:get_hp()
 		return self
 	end,
 get_staticdata = function(self)
 		aliveai.max(self)
+		if self.isfalling and self.kill_deep_falling==1 then
+			return "destroy_on_load"
+		end
 		local r={inv=self.inv,old=1,hp=self.object:get_hp(),
 			task=self.task,
 			taskstep=self.taskstep,
@@ -344,6 +371,7 @@ on_step=aliveai.bot,
 	visual= def.visual or "mesh",
 	basey= def.basey or 0.7,
 	old= 0,
+	kill_deep_falling= def.kill_deep_falling or 1,
 	botname=def.botname or "",
 	dmg= def.dmg or 4,
 	namecolor= def.name_color or "ffffff",
@@ -431,7 +459,7 @@ minetest.register_abm({
 		local pos2={x=pos.x,y=pos.y+2,z=pos.z}
 		local l=minetest.get_node_light(pos1)
 		if l==nil then return true end
-		if math.random(1,def.spawn_chance)==1
+		if aliveai.random(1,def.spawn_chance)==1
 		and (def.light==0 
 		or (def.light>0 and l>=def.lowest_light) 
 		or (def.light<0 and l<=def.lowest_light)) then

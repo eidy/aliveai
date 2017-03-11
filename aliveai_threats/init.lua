@@ -1025,7 +1025,7 @@ aliveai.create_bot({
 	end
 })
 
-minetest.register_globalstep(function(dtime) 
+minetest.register_globalstep(function(dtime)
 	for i, o in pairs(aliveai_threats.debris) do
 		if o.ob and o.ob:get_luaentity() and o.ob:get_hp()>0 and o.ob:getvelocity().y~=0 then
 			for ii, ob in pairs(minetest.get_objects_inside_radius(o.ob:getpos(), 1.5)) do
@@ -1209,7 +1209,7 @@ aliveai.create_bot({
 
 	end,
 	on_step=function(self,dtime)
-		if self.dead then
+		if self.dead1 then
 			self.time=self.otime
 			self.deadtimer=self.deadtimer-1
 			if self.deadtimer<0 then 
@@ -1234,7 +1234,7 @@ aliveai.create_bot({
 			self.come=nil
 		end
 	end,
-	on_punched=function(self,puncher,h)
+	on_punched=function(self,puncher,h) 
 		self.hurted=h
 	end,
 	on_death=function(self,puncher,pos)
@@ -1268,7 +1268,7 @@ aliveai.create_bot({
 				aliveai.anim(self,"lay")
 				self.object:set_hp(self.hp_max)
 				self.hp=self.hp_max
-				self.dead=true
+				self.dead1=true
 				return self
 			end
 			if r==4 then self.nhead=true end
@@ -1277,7 +1277,7 @@ aliveai.create_bot({
 				self.on_spawn(self)
 			end
 		end
-		if not self.dead then
+		if not self.dead1 then
 			self.hp_max=self.hp_max-2
 			self.object:set_hp(self.hp_max)
 			self.hp=self.hp_max

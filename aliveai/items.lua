@@ -160,8 +160,11 @@ end
 aliveai.invadd=function(self,add,num,nfeedback)
 -- inventory
 	if not (add and num) or add=="" or num=="" then return self end
+
 	if self.inv[add] then
 		self.inv[add]=self.inv[add]+num
+		self.lastitem_name=add
+		self.lastitem_count=self.inv[add]
 	else
 		self.inv[add]=num
 	end
@@ -409,7 +412,7 @@ aliveai.digdrop=function(pos)
 		end
 		local rr=0
 		for i=1,n,1 do
-			if items[i] and items[i].name and items[i].rnd and math.random(1,items[i].rnd)==1 then
+			if items[i] and items[i].name and items[i].rnd and aliveai.random(1,items[i].rnd)==1 then
 				return {name=items[i].name,n=items[i].n}
 			elseif items[i] and items[i].name and not items[i].rnd then
 				return {name=items[i].name,n=items[i].n}
@@ -465,7 +468,7 @@ aliveai.eat=function(self,name)
 		end
 	end
 -- have or not found something to eat 
-	if gchange==0 then return nil end
+	if gchange==0 or self.inv[gname]==nil then return nil end
 
 	local hp=self.object:get_hp()
 	local n=gchange

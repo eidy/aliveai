@@ -2,12 +2,6 @@
 		name="folk1",
 		texture="aliveai_folk1.png",
 		arm=3,
-		--on_step=function(self,dtime)-- used when testing functions
-		--	return self
-		--end,
-		--on_click=function(self,clicker)
-		--	aliveai.lookat(self,clicker:getpos(),true)
-		--end
 })
 aliveai.create_bot({
 		name="folk2",
@@ -82,4 +76,49 @@ aliveai.create_bot({
 		name="folk15",
 		texture="aliveai_folk15.png",
 		hp=15,
+})
+
+aliveai.create_bot({
+		name="folk17",
+		texture="aliveai_folk17.png",
+		hp=21,
+		on_step=function(self,dtime)
+			if not self.juggling and self.isrnd and math.random(1,40)==1 then
+				for name, s in pairs(self.inv) do
+					if s>30 then
+						self.juggle_with=name
+						break
+					end
+				end
+				if not self.juggle_with then return end
+				aliveai.stand(self)
+				self.juggle=math.random(3,10)
+				self.juggling=math.random(50,100)
+			end
+			if not self.juggling then return end
+			self.juggling=self.juggling-1
+			if self.juggling<0 or self.inv[self.juggle_with]==nil or self.inv[self.juggle_with]<1 then self.juggling=nil self.time=self.otime return end
+			self.time=1 -((self.juggle*0.1)*0.9)
+			local y=5 + self.juggle
+			local pos=self.object:getpos()
+			local yaw=self.object:getyaw()
+			if not self.jside then self.jside=1
+			elseif self.jside==0.2 then self.jside=-0.2
+			else self.jside=0.2 end
+			local x =math.sin(yaw) * self.jside
+			local z =math.cos(yaw) * self.jside
+			pos.y=pos.y-0.1
+			for _, ob in ipairs(minetest.get_objects_inside_radius(pos, 2)) do
+				local en=ob:get_luaentity()
+				if en and en.name=="__builtin:item" and en.itemstring==self.juggle_with and not en.jtokken then
+					en.jtokken=1
+					ob:punch(self.object,1,{full_punch_interval=1,damage_groups={fleshy=1}})
+					self.inv[self.juggle_with]=self.inv[self.juggle_with]+1
+				end
+			end
+			self.inv[self.juggle_with]=self.inv[self.juggle_with]-1
+			local e=minetest.add_item(aliveai.pointat(self,0.5), self.juggle_with)
+			e:setvelocity({x=x,y=y,z=z})
+			return self
+		end
 })

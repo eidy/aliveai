@@ -21,11 +21,11 @@ aliveai.generate_house=function(self)
 		aliveai.showstatus(self,"generate house")
 	end
 --materials
-		local build_able=math.random(1,aliveai.get_everything_to_build_chance)==1
-		local wall=aliveai.standard[math.random(1,aliveai.getlength(aliveai.standard))]
-		local floor=aliveai.standard[math.random(1,aliveai.getlength(aliveai.standard))]
-		local window=aliveai.windows[math.random(1,aliveai.getlength(aliveai.windows))]
-		local furn_len=aliveai.getlength(aliveai.furnishings)
+		local build_able=aliveai.random(1,aliveai.get_everything_to_build_chance)==1
+		local wall=aliveai.standard[aliveai.random(1,#aliveai.standard)]
+		local floor=aliveai.standard[aliveai.random(1,#aliveai.standard)]
+		local window=aliveai.windows[aliveai.random(1,#aliveai.windows)]
+		local furn_len=#aliveai.furnishings
 
 		wall=aliveai.namecut(wall,true)
 		floor=aliveai.namecut(floor,true)
@@ -58,13 +58,13 @@ aliveai.generate_house=function(self)
 		if doorrnd==1 then
 			rnd[1]=0
 			rnd[2]=rx
-			doorholez=math.random(1,rz-1)
+			doorholez=aliveai.random(1,rz-1)
 			doorholex=rnd[math.random(1,2)]
 			if doorholex==0 then doorp=1 else doorp=-1 end -- used with furn
 		else
 			rnd[1]=0
 			rnd[2]=rz
-			doorholex=math.random(1,rx-1)
+			doorholex=aliveai.random(1,rx-1)
 			doorholez=rnd[math.random(1,2)]
 			if doorholez==0 then doorp=1 else doorp=-1 end -- used with furn
 		end
@@ -85,13 +85,13 @@ aliveai.generate_house=function(self)
 -- windows
 		local wy=math.random(1,3)
 		local wx1=math.random(1,7)
-		local wx1s=math.random(1,rx-1)
+		local wx1s=aliveai.random(1,rx-1)
 		local wx2=math.random(1,7)
-		local wx2s=math.random(1,rx-1)
+		local wx2s=aliveai.random(1,rx-1)
 		local wz1=math.random(1,7)
-		local wz1s=math.random(1,rz-1)
+		local wz1s=aliveai.random(1,rz-1)
 		local wz2=math.random(1,7)
-		local wz2s=math.random(1,rz-1)
+		local wz2s=aliveai.random(1,rz-1)
 
 		local last=""
 		local node=""
@@ -124,7 +124,7 @@ aliveai.generate_house=function(self)
 						node=floor
 					elseif y==1 and (z==1 or z==rz-1 or x==1 or x==rx-1)				 -- furnishings
 					and not ((x==doorholex+doorp and z==doorholez) or (z==doorholez+doorp and x==doorholex)) then -- no furnishings front of door holes 
-						local furn_rnd=math.random(1,furn_len*4)
+						local furn_rnd=aliveai.random(1,furn_len*4)
 						if furn_rnd<=furn_len then 
 							node=aliveai.furnishings[furn_rnd]
 						else
