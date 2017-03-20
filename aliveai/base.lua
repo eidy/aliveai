@@ -1148,7 +1148,7 @@ aliveai.convertdata=function(str,spl)
 				r=r .. aliveai.strpos(s,false)
 			elseif s and type(s)=="table" then				-- table
 				for n1, s1 in pairs(s) do
-				if n1==nil or type(n1)=="table" then n1="" s1="" end
+				if n1==nil or type(n1)=="table" or type(s1)=="table" then n1="" s1="" end
 					r=r .. n1 .. " " .. s1 .."*"
 				end
 			else							-- else
@@ -1178,7 +1178,7 @@ aliveai.genname=function(self)
 	return s
 end
 
-function aliveai.max(self,update)
+aliveai.max=function(self,update)
 	local c=0
 	for i in pairs(aliveai.active) do
 		c=c+1

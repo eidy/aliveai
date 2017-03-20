@@ -94,7 +94,7 @@ end
 
 aliveai.steal=function(self,ste)
 	local known=aliveai.getknown(self,ste)
-	if known=="member" or not ste:is_player() then return self end
+	if self.stealing~=1 or known=="member" or not ste:is_player() then return self end
 	aliveai.showstatus(self,"stealing")
 	local inv=ste:get_inventory()
 	local ix=0
@@ -427,7 +427,7 @@ aliveai.come=function(self)
 			if see then
 -- walking to
 				aliveai.rndwalk(self,false)
-				if d>self.arm and not self.path then
+				if d>2 and not self.path then
 					aliveai.lookat(self,cpos)
 					aliveai.walk(self)
 					return self
@@ -822,7 +822,7 @@ aliveai.build=function(self)
 				aliveai.showstatus(self,"abort building, no enough materials")
 				return self
 			end
-			if self.build.path[self.build_step].node~=node1 then return self end
+			if not self.build.path[self.build_step] or self.build.path[self.build_step].node~=node1 then return self end
 		end
 -- keep build
 		aliveai.lookat(self,self.build.path[self.build_step].pos)
@@ -1083,7 +1083,7 @@ aliveai.path=function(self)
 		self.path_timer=self.path_timer+1
 		self.time=0.1
 		local pos=self.object:getpos()
-		pos.y=pos.y-1
+		pos.y=pos.y-(self.basey)
 		if not self.path_bridge and aliveai.samepos(aliveai.roundpos(pos),self.path[self.pathn]) then
 			if self.path[self.pathn] then
 			self.path_timer=0
@@ -1120,7 +1120,7 @@ aliveai.path=function(self)
 				if nn==nil then return self end
 				local node=minetest.get_node(nn)
 				if node and (minetest.registered_nodes[node.name].walkable
-				or minetest.registered_nodes[minetest.get_node({x=nn.x,y=nn.y+1,z=nn.z}).name].walkable) then
+				or (self.visual=="mesh" and minetest.registered_nodes[minetest.get_node({x=nn.x,y=nn.y+1,z=nn.z}).name].walkable)) then
 					aliveai.exitpath(self)
 					aliveai.showstatus(self,"path blocked")
 					self.object:setyaw(math.random(0,6.28))

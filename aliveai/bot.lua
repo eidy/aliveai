@@ -195,6 +195,7 @@ on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 		local pos=self.object:getpos()
 		if minetest.get_node({x=pos.x,y=pos.y-2,z=pos.z}).name=="ignore" then
 			self.object:remove()
+			aliveai.max(self,true)
 			return self
 		end
 		if dir~=nil then
