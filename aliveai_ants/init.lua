@@ -101,10 +101,6 @@ aliveai.create_bot({
 			self.antsize=m:get_int("size")
 			self.antcount=m:get_int("count")
 			self.team=m:get_string("team")
-
-print(self.team,self.antcount,self.antsize,self.antcolor,self.home)
-
-
 			aliveai_ants.set_color(self)
 		end
 	end,
@@ -179,37 +175,24 @@ print(self.team,self.antcount,self.antsize,self.antcolor,self.home)
 						m:set_string("count",self.antcount)
 						m:set_string("size",self.antsize)
 					else
-print(44444)
 						local m=minetest.get_meta(self.home)
-print(222222)
 						local s=m:get_int("s")
 						local count=m:get_int("count")
 						for _, ob in ipairs(minetest.get_objects_inside_radius(self.home, 2)) do
-							if ob and ob:get_attach() then print(6) ob:set_detach() print(7) end
+							if ob and ob:get_attach() then ob:set_detach() end
 							if not (ob:get_luaentity() and ob:get_luaentity().team==self.team) then
-print(1)
 								aliveai.punch(self,ob,10)
-print(2)
 								count=count+1
 								s=s+1
 							end
-
-
 						end
-						print(3)
 						m:set_int("count",count)
-print(4)
 						if s>9 then
-print(5)
 							m:set_int("s",0)
 							m:set_int("size",m:get_int("size")+1)
-print(6)
 							aliveai_ants.gen_hill(self)
-print(7)
 						else
-print(8)
 							m:set_int("s",s)
-print(9)
 						end
 					end
 				end

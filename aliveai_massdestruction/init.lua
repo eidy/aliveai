@@ -1,4 +1,12 @@
-﻿minetest.register_abm({
+﻿minetest.register_craft({
+	output = "aliveai_massdestruction:walking_bomb 3",
+	recipe = {
+		{"default:mese_crystal_fragment","default:coal_lump"},
+	}
+})
+
+
+minetest.register_abm({
 	nodenames = {"group:sand","default:snow"},
 	interval = 30,
 	chance = 1000,
@@ -123,7 +131,7 @@ minetest.register_entity("aliveai_massdestruction:bomb",{
 })
 
 minetest.register_entity("aliveai_massdestruction:bomb2",{
-	hp_max = 30,
+	hp_max = 10,
 	physical =true,
 	weight = 1,
 	collisionbox = {-0.2,-0.2,-0.2,0.2,0.2,0.2},
@@ -136,9 +144,7 @@ minetest.register_entity("aliveai_massdestruction:bomb2",{
 	is_visible = true,
 	makes_footstep_sound = true,
 	automatic_rotate = false,
-
 	namecolor="",
-
 	expl=function(self,pos)
 		minetest.add_particlespawner({
 			amount = 20,
@@ -169,8 +175,6 @@ minetest.register_entity("aliveai_massdestruction:bomb2",{
 				local v={x = dir.x*5,y = self.object:getvelocity().y,z = dir.z*5}
 				self.object:setvelocity(v)
 			end
-		else
-			self.object:set_hp(self.hp)
 		end
 
 		if self.hp<1 and not self.exp then self.expl(self,self.object:getpos()) end
