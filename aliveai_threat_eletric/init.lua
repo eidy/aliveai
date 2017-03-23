@@ -292,5 +292,5 @@ aliveai_threat_eletric.explode=function(pos,r)
 			ob:setpos({x=pos.x+pos3.x,y=pos.y+pos3.y,z=pos.z+pos3.z,})
 		end
 	end
-	minetest.sound_play("aliveai_threat_eletric_explode", {pos=pos, gain = 0.5, max_hear_distance = r*4})
+	minetest.sound_play("aliveai_nitroglycerine_nuke", {pos=pos, gain = 0.5, max_hear_distance = r*4})
 end

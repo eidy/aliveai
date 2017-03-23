@@ -1,4 +1,6 @@
-﻿aliveai.stuckinblock=function(self)
+﻿
+
+aliveai.stuckinblock=function(self)
 	local posl=self.object:getpos()
 	local n=minetest.get_node({x=posl.x,y=posl.y,z=posl.z})
 	local stuck=1

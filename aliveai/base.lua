@@ -423,6 +423,7 @@ aliveai.lookforfreespace=function(pos,xzstartdis,xzdis,xz,y)
 end
 
 aliveai.checkarea=function(pos,node_name,pxz,py)
+	if not pxz then return end
 	local pxz2=(pxz/2)*-1
 	local air= "air"==node_name
 	for y=0,py,1 do

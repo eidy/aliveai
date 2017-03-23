@@ -85,10 +85,27 @@ if node.velocity==1 then
 		end
 	end
 end
+
 	minetest.sound_play("aliveai_nitroglycerine_explode", {pos=pos, gain = 0.5, max_hear_distance = node.radius*8})
-	if node.radius>15 then
+	if node.radius>9 then
 		minetest.sound_play("aliveai_nitroglycerine_nuke", {pos=pos, gain = 0.5, max_hear_distance = node.radius*30})
 	end
+	minetest.add_particlespawner({
+		amount = 20,
+		time =0.2,
+		minpos = {x=pos.x-1, y=pos.y, z=pos.z-1},
+		maxpos = {x=pos.x+1, y=pos.y, z=pos.z+1},
+		minvel = {x=-5, y=0, z=-5},
+		maxvel = {x=5, y=5, z=5},
+		minacc = {x=0, y=2, z=0},
+		maxacc = {x=0, y=0, z=0},
+		minexptime = 1,
+		maxexptime = 2,
+		minsize = 5,
+		maxsize = 10,
+		texture = "default_item_smoke.png",
+		collisiondetection = true,
+	})
 end
 
 

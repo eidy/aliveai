@@ -1,4 +1,4 @@
-﻿aliveai_threats={debris={}}
+﻿aliveai_threats={c4={},debris={}}
 
 aliveai.savedata.clone=function(self)
 	if self.clone then
@@ -35,6 +35,62 @@ aliveai.loaddata.clone=function(self,r)
 end
 
 if minetest.get_modpath("aliveai_nitroglycerine")~=nil then
+
+minetest.register_craft({
+	output = "aliveai_threats:c4 2",
+	recipe = {
+		{"default:steel_ingot","default:coal_lump","default:steel_ingot"},
+		{"default:steel_ingot","default:mese_crystal_fragment","default:steel_ingot"},
+		{"default:steel_ingot","default:copper_ingot","default:steel_ingot"},
+
+	}
+})
+
+
+minetest.register_craftitem("aliveai_threats:c4", {
+	description = "C4 bomb",
+	inventory_image = "aliveai_threats_c4.png",
+		on_use = function(itemstack, user, pointed_thing)
+			local name=user:get_player_name()
+			local c=aliveai_threats.c4[name]
+			if not c and pointed_thing.type=="object" then
+				local ob=pointed_thing.ref
+				aliveai_threats.c4[user:get_player_name()]=ob
+				user:get_inventory():add_item("main","aliveai_threats:c4_controler")
+				itemstack:take_item()
+			elseif not c then
+				aliveai_threats.c4[name]=nil
+			end
+			return itemstack
+		end
+})
+
+minetest.register_craftitem("aliveai_threats:c4_controler", {
+	description = "C4 controller",
+	inventory_image = "aliveai_threats_c4_controller.png",
+	groups = {not_in_creative_inventory=1},
+		on_use = function(itemstack, user, pointed_thing)
+			local name=user:get_player_name()
+			local ob=aliveai_threats.c4[name]
+			if ob and ob:getpos() and ob:getpos().x then
+				local pos=ob:getpos()
+				for _, ob in ipairs(minetest.get_objects_inside_radius(pos, 3)) do
+					ob:punch(ob,1,{full_punch_interval=1,damage_groups={fleshy=200}})
+				end
+				aliveai_nitroglycerine.explode(pos,{
+					radius=3,
+					set="air",
+				})
+			else
+				user:get_inventory():add_item("main","aliveai_threats:c4")
+			end
+			aliveai_threats.c4[name]=nil
+			itemstack:take_item()
+			return itemstack
+		end
+})
+
+
 aliveai.create_bot({
 		drop_dead_body=0,
 		attack_players=1,
@@ -232,6 +288,74 @@ aliveai.create_bot({
 			return self
 	end,
 })
+
+aliveai.create_bot({
+		drop_dead_body=0,
+		attack_players=1,
+		name="heavygassman",
+		team="nuke",
+		texture="aliveai_threats_gassman2.png",
+		attacking=1,
+		talking=0,
+		light=0,
+		building=0,
+		escape=0,
+		start_with_items={["default:coal_lump"]=4},
+		type="monster",
+		dmg=0,
+		hp=20,
+		name_color="",
+		arm=2,
+		coming=1,
+		smartfight=0,
+		attack_chance=1,
+	on_fighting=function(self,target)
+		if not self.t then self.t=20 end
+		self.temper=10
+		self.t=self.t-1
+		if self.t<0 then
+			self.object:punch(self.object,1,{full_punch_interval=1,damage_groups={fleshy=self.object:get_hp()*2}},nil)
+			return self
+		end
+		self.object:set_properties({nametag=self.t,nametag_color="#ff0000aa"})
+	end,
+	on_death=function(self,puncher,pos)
+		if not self.ex then
+			self.ex=true
+			local radius=10
+			aliveai_nitroglycerine.explode(pos,{
+				radius=radius,
+				place={"aliveai_threats:gass","aliveai_threats:gass"},
+				set="aliveai_threats:gass",
+				place_chance=1,
+			})
+		end
+		return self
+	end,
+})
+
+minetest.register_node("aliveai_threats:gass", {
+	description = "Gass",
+	inventory_image = "bubble.png",
+	tiles = {"aliveai_air.png"},
+	walkable = false,
+	pointable = false,
+	drowning = 1,
+	buildable_to = true,
+	drawtype = "glasslike",
+	groups = {not_in_creative_inventory=1},
+	post_effect_color = {a = 248, r =0, g = 0, b = 0},
+	damage_per_second = 1,
+	paramtype = "light",
+	liquid_viscosity = 15,
+	liquidtype = "source",
+	liquid_range = 0,
+	liquid_alternative_flowing = "aliveai_threats:gass",
+	liquid_alternative_source = "aliveai_threats:gass",
+	groups = {liquid = 4,crumbly = 1}
+})
+
+
 end
 
 aliveai.create_bot({
@@ -838,7 +962,7 @@ aliveai.create_bot({
 })
 
 minetest.register_tool("aliveai_threats:quantumcore", {
-	description = "Mind manipulator",
+	description = "Quantum core",
 	inventory_image = "aliveai_threats_quantumcore.png",
 	range = 15,
 	on_use=function(itemstack, user, pointed_thing)
@@ -1063,6 +1187,7 @@ aliveai.create_bot({
 		escape=0,
 		spawn_on={"group:sand","group:soil","default:snow","default:snowblock","default:ice","group:leaves","group:tree","group:stone","group:cracky","group:level","group:crumbly","group:choppy"},
 		attack_chance=2,
+		spawn_chance=100,
 	on_spawn=function(self)
 		local pos=self.object:getpos()
 		pos.y=pos.y-1.5
