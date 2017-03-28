@@ -1,5 +1,5 @@
 ﻿By AiTechEye
-Version: 4.6
+Version: 4.7
 Licenses: code and media CC0
 
 Alive AI

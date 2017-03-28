@@ -300,11 +300,6 @@ end
 aliveai.buildpath=function(self,need)
 	if self.house=="" then
 		aliveai.generate_house(self)
-		if not (self.build_x and self.build_y and self.build_z) then
-			aliveai.showstatus(self,"Error: void build instructions")
-			aliveai.punch(self,self.object,self.object:get_hp()*2)
-			return nil
-		end
 	elseif string.find(self.house,"+++")~=nil then
 		local house1=self.house.split(self.house,"+++")
 		self.house=house1[2]

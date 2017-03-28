@@ -165,6 +165,7 @@ minetest.register_entity("aliveai_massdestruction:bomb2",{
 		self.exp=1
 		aliveai_nitroglycerine.explode(pos,{radius=2,set="air",place={"air","air"}})
 		self.object:setvelocity({x=math.random(-5,5),y=math.random(5,10),z=math.random(-5,5)})
+		self.object:remove()
 	end,
 	on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 		local en=puncher:get_luaentity()
@@ -176,9 +177,12 @@ minetest.register_entity("aliveai_massdestruction:bomb2",{
 				self.object:setvelocity(v)
 			end
 		end
+		if self.hp<1 and not self.exp then
+			self.expl(self,self.object:getpos())
+		elseif self.hp>1 then
+			self.exp=nil
+		end
 
-		if self.hp<1 and not self.exp then self.expl(self,self.object:getpos()) end
-		self.exp=nil
 	end,
 	on_activate=function(self, staticdata)
 		self.object:setacceleration({x =0, y =-10, z =0})

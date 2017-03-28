@@ -168,6 +168,14 @@ aliveai.generate_house=function(self)
 	self.build_x=rx
 	self.build_y=ry
 	self.build_z=rz
+
+	if not (self.build_x and self.build_y and self.build_z) or  self.house==nil or self.house=="" then
+		aliveai.showstatus(self,"Error: failed to generate build instructions")
+		print(self.botname,"Failed to generate build instructions")
+		aliveai.punch(self,self.object,self.object:get_hp()*2)
+		return nil
+	end
+
 	return self
 end
 
