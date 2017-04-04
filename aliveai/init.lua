@@ -28,11 +28,14 @@
 	ladders=			{"default:ladder_wood","default:ladder_steel"},
 	standard={"w","s"},	--short names/group (wood stone) have to be added to the "aliveai.namecut" and "aliveai.newneed"
 	tools_handler={		-- see extras.lua for use
-		default={
+		["default"]={
 			try_to_craft=true,
 			use=false,
-			tools={"pick_wood","pick_stone","steel_steel","pick_mese","pick_diamond"},
+			tools={"pick_wood","pick_stone","steel_steel","pick_mese","pick_diamond","sword_steel","sword_mese","sword_diamond"},
 		}
+	},
+	nodes_handler={ --dig, mesecon_on, mesecon_off, punch, function
+		["default:apple"]="dig",["aliveai_ants:antbase"]="dig",["tnt:tnt"]="dig",["tnt:tnt_burning"]="dig",["fire:basic_flame"]="dig",
 	},
 }
 

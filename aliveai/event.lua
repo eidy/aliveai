@@ -1,4 +1,71 @@
-﻿
+﻿aliveai.node_handler=function(self)
+	local keep
+	if self.nodehandler and self.path then
+		aliveai.path(self)
+		if self.done=="path" then
+			if type(self.nodehandler.handler)=="function" then
+				self.nodehandler.handler(self,self.nodehandler.pos)
+			end
+			if self.nodehandler.handler=="dig" then
+				aliveai.stand(self)
+				aliveai.lookat(self,self.nodehandler.pos)
+				aliveai.dig(self,self.nodehandler.pos)
+				keep=true
+				self.time=self.otime
+			end
+			if aliveai.mesecons and self.nodehandler.handler=="mesecon_on" then
+				mesecon.receptor_on(self,self.nodehandler.pos)
+			end
+			if aliveai.mesecons and self.nodehandler.handler=="mesecon_off" then
+				mesecon.receptor_off(self,self.nodehandler.pos)
+			end
+			if aliveai.mesecons and self.nodehandler.handler=="punch" then
+				local n=minetest.get_node(self.nodehandler.pos)
+				if self.nodehandler.name==n.name and
+				minetest.registered_nodes[n.name] and
+				minetest.registered_nodes[n.name].on_rightclick then
+					minetest.after(0.1, function(self)
+						aliveai.clearinventory(self)
+					end,self)
+					minetest.registered_nodes[n.name].on_rightclick(self.nodehandler.pos,n,aliveai.createuser(self))
+				end
+			end
+			if not keep then
+				self.done=""
+				self.nodehandler=nil
+				return
+			end
+		end
+	end
+
+	if not keep and math.random(1,20)~=1 then return end
+	aliveai.showstatus(self,"handling nodes")
+	local p3
+	local pos=self.object:getpos()
+	local pt={x=pos.x,y=pos.y-1,z=pos.z}
+	for i, s in pairs(aliveai.nodes_handler) do
+
+		if minetest.get_node(pt).name==i then
+			self.path={pt}
+			self.nodehandler={name=i,handler=s,pos=pt}
+			self.done="path"
+			return self
+		end
+
+		local p=minetest.find_node_near(pos, self.arm,i)
+		if p and aliveai.visiable(self,p) then
+			local p2=aliveai.neartarget(self,p)
+			if p2 then
+				local p3=aliveai.creatpath(self,pos,p2)
+				if p3 then
+					self.path=p3
+					self.nodehandler={name=i,handler=s,pos=p}
+					return self
+				end
+			end
+		end
+	end
+end
 
 aliveai.stuckinblock=function(self)
 	local posl=self.object:getpos()

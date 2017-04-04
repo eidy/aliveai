@@ -89,7 +89,6 @@ aliveai.create_bot({
 		visual_size={x=0.4,y=0.001},
 		collisionbox={-0.1,0,-0.1,0.2,0.3,0.2},
 		basey=0,
-		spawn_y=-1,
 		distance=10,
 		pickuping=0,
 		annoyed_by_staring=0,
@@ -107,6 +106,7 @@ aliveai.create_bot({
 	on_spawn=function(self)
 		self.aliveai_ant=1
 		local pos=aliveai.roundpos(self.object:getpos())
+		pos.y=pos.y-2
 		self.home=pos
 		self.team=pos.x .."_" .. pos.y .. "_" .. pos.z
 		if minetest.get_node(pos).name=="aliveai_ants:antbase" then
@@ -251,8 +251,9 @@ aliveai.create_bot({
 		clicker:punch(self.object,1,{full_punch_interval=1,damage_groups={fleshy=2}})
 	end,
 	on_death=function(self,puncher,pos)
+		if not self.antcolor then self.antcolor="000000" end
 		local pos=self.object:getpos()
-			minetest.add_particlespawner({
+		minetest.add_particlespawner({
 			amount = 5,
 			time =0.05,
 			minpos = pos,

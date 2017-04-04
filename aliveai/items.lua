@@ -834,6 +834,7 @@ aliveai.createuser=function(self,index)
 	return {
 		get_luaentity=aliveai.re(self.object),
 		get_player_name=aliveai.re(self.botname),
+		get_look_horizontal=aliveai.re(aliveai.pointat(self)),
 		get_look_dir=aliveai.re({x=math.cos(yaw),y=math.sin(0),z=math.sin(yaw)}),
 		get_look_pitch=aliveai.re(math.pi/2),
 		get_look_yaw=aliveai.re(self.object:getyaw()),

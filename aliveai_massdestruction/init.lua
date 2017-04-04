@@ -179,8 +179,6 @@ minetest.register_entity("aliveai_massdestruction:bomb2",{
 		end
 		if self.hp<1 and not self.exp then
 			self.expl(self,self.object:getpos())
-		elseif self.hp>1 then
-			self.exp=nil
 		end
 
 	end,

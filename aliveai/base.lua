@@ -947,7 +947,7 @@ aliveai.viewfield=function(self,ob)
 	else
 		pos2=ob:getpos()
 	end
-	return aliveai.distance(pos1,pos2)>aliveai.distance(aliveai.pointat(self,1),pos2)
+	return aliveai.distance(pos1,pos2)>aliveai.distance(aliveai.pointat(self,0.1),pos2)
 end
 
 aliveai.pointat=function(self,d)

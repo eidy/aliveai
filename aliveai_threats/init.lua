@@ -1,5 +1,7 @@
 ﻿aliveai_threats={c4={},debris={}}
 
+dofile(minetest.get_modpath("aliveai_threats") .. "/eyes.lua")
+
 aliveai.savedata.clone=function(self)
 	if self.clone then
 		return {clone=1}
@@ -75,6 +77,8 @@ minetest.register_craftitem("aliveai_threats:c4_controler", {
 			if ob and ob:getpos() and ob:getpos().x then
 				local pos=ob:getpos()
 				for _, ob in ipairs(minetest.get_objects_inside_radius(pos, 3)) do
+					local en=ob:get_luaentity()
+					if en and en.aliveai then en.drop_dead_body=0 end
 					ob:punch(ob,1,{full_punch_interval=1,damage_groups={fleshy=200}})
 				end
 				aliveai_nitroglycerine.explode(pos,{
@@ -814,6 +818,7 @@ aliveai.create_bot({
 		collisionbox={-0.1,0,-0.1,0.2,0.1,0.2},
 		basey=0,
 		distance=10,
+		spawn_y=2,
 	on_load=function(self)
 		if self.clone then
 			self.object:remove()
@@ -1187,7 +1192,7 @@ aliveai.create_bot({
 		escape=0,
 		spawn_on={"group:sand","group:soil","default:snow","default:snowblock","default:ice","group:leaves","group:tree","group:stone","group:cracky","group:level","group:crumbly","group:choppy"},
 		attack_chance=2,
-		spawn_chance=100,
+		spawn_y=0,
 	on_spawn=function(self)
 		local pos=self.object:getpos()
 		pos.y=pos.y-1.5
@@ -1409,4 +1414,3 @@ aliveai.create_bot({
 		end
 	end
 })
-

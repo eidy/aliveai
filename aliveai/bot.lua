@@ -1,7 +1,4 @@
-﻿
-
-
-aliveai.bot=function(self, dtime)
+﻿aliveai.bot=function(self, dtime)
 	aliveai.bots_delay=aliveai.bots_delay+dtime
 	self.timer=self.timer+dtime
 	self.timerfalling=self.timerfalling+dtime
@@ -23,6 +20,7 @@ aliveai.bot=function(self, dtime)
 	if aliveai.come(self) then return self end
 	if aliveai.need_helper(self) then return self end	-- give stuff
 	if aliveai.light(self) then return self end
+	if aliveai.node_handler(self) then return self end
 	if aliveai.timer(self) then return self end		-- remove monsters
 	aliveai.msghandler(self)
 	
@@ -374,7 +372,7 @@ on_step=aliveai.bot,
 	old= 0,
 	kill_deep_falling= def.kill_deep_falling or 1,
 	botname=def.botname or "",
-	dmg= def.dmg or 4,
+	dmg= def.dmg or 1,
 	namecolor= def.name_color or "ffffff",
 	temper= 0,
 	rnd= 0,
