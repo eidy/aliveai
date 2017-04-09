@@ -18,101 +18,12 @@ if aliveai.mesecons then
 	aliveai.nodes_handler["mesecons_switch:mesecon_switch_on"]="punch"
 	aliveai.nodes_handler["mesecons_button:button_off"]="punch"
 end
+
 if minetest.get_modpath("farming") then
 	for i=1,5,8 do
 		aliveai.nodes_handler["farming:wheat_" .. i]="dig"
 	end
 end
-if minetest.get_modpath("boats") then
-aliveai.boat=function(self,pos)
-	if not self.inv["boats:boat"] or self.object:get_attach() then return end
-	aliveai.invadd(self,"boats:boat",-1)
-	aliveai.showstatus(self,"use boat")
-
-	self.get_player_control=aliveai.re({sneak=false,up=true,down=false,left=false,right=false})
-	self.get_look_horizontal=aliveai.re(0)
-	self.set_look_horizontal=aliveai.re(0)
-	self.is_player=aliveai.re(true)
-	self.get_player_name=aliveai.re(self.botname)
-	self.get_attach=aliveai.re()
-	self.set_attach=aliveai.re()
-	self.set_detach=aliveai.re()
-	self.getpos=aliveai.re(self.object:getpos())
-	self.setpos=aliveai.re()
-	self.set_animation=aliveai.re()
-	local s=ItemStack("boats:boat")
-	minetest.registered_craftitems["boats:boat"].on_place(ItemStack("boats:boat"),self,{type="node",under=pos})
-
-	local boat
-	local en
-
-	for _, ob in ipairs(minetest.get_objects_inside_radius(pos, 2)) do
-		en=ob:get_luaentity() 
-		if en and en.name=="boats:boat" then
-			boat=ob
-			en.on_rightclick(en, self)
-			break
-		end
-	end
-	if not boat then return end
-	local tr={true,false}
-
-	local r=0
-	local rn=0
-	for i=1,10,1 do
-		r=aliveai.random(i*5,i*10)
-		minetest.after(r, function(self,tr)
-			if self and self.object and self.object:get_luaentity() and self.object:get_attach() then
-				self.get_player_control=aliveai.re({
-					sneak=false,
-					up=true,
-					down=false,
-					left=tr[aliveai.random(1,2)],
-					right=tr[aliveai.random(1,2)]
-				})
-			end
-		end,self,tr)
-		minetest.after(r+aliveai.random(1,5), function(self,r,boat)
-			if self and self.object and self.object:get_luaentity() and self.object:get_attach() then
-				local p=aliveai.roundpos(boat:getvelocity())
-				if p and p.x+p.z==0 then
-					en.on_rightclick(en, self)
-					self.object:set_detach()
-					aliveai.anim(self,"stand")
-					self.controlled=nil
-					aliveai.invadd(self,"boats:boat",1)
-					boat:remove()
-					self.object:setacceleration({x=0,y=-10,z =0})
-				else
-					self.get_player_control=aliveai.re({sneak=false,up=true,down=false,left=false,right=false})
-				end
-			end
-		end,self,r,boat)
-		if r>rn then rn=r end
-	end
-	minetest.after(rn+5, function(self,en)
-		if self and self.object and self.object:get_luaentity() and self.object:get_attach() then
-			en.on_rightclick(en, self)
-			self.object:set_detach()
-			aliveai.anim(self,"stand")
-			self.controlled=nil
-			aliveai.invadd(self,"boats:boat",1)
-			boat:remove()
-			self.object:setacceleration({x=0,y=-10,z =0})
-		end
-	end,self,en)
-	self.object:set_attach(boat, "",{x=0,y=11,z=-3}, {x=0,y=0,z=0})
-	self.controlled=1
-	aliveai.stand(self)
-	aliveai.anim(self,"sit")
-end
-
-	aliveai.nodes_handler["default:water_source"]=aliveai.boat
-	aliveai.tools_handler["boats"]={try_to_craft=true,use=false,tools={"boat"}}
-end
-
-
-
 
 if minetest.get_modpath("wieldview") then
 	aliveai.wieldviewr=function(self,item)

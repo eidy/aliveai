@@ -105,9 +105,12 @@ minetest.register_entity("aliveai_massdestruction:bomb",{
 		self.time=self.time+dtime
 		self.time2=self.time2-dtime
 		local v=self.object:getvelocity()
-		if self.time2>1 and (v.y==0) then
-			self.time2=0.1
-			return self
+		if self.time2>1 and v.y==0 then
+			local pos=self.object:getpos()
+			local n=minetest.registered_nodes[minetest.get_node({x=pos.x,y=pos.y-1,z=pos.z})]
+			if n and n.walkable then
+				self.time2=0.1
+			end
 		end
 		if self.time<0.1 then return self end
 		self.time=0

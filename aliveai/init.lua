@@ -15,11 +15,12 @@
 	registered_bots={},		--registered_bots
 	active={},			--active bots
 	active_num=0,			--active bots count
-	regulate_prestandard=0,
 	smartshop=minetest.get_modpath("smartshop")~=nil,
 	mesecons=minetest.get_modpath("mesecons")~=nil,
 	loaddata={},			--functions
 	savedata={},			--functions
+	team_player={singleplayer="sam"},
+
 				--staplefood database, add eatable stuff to the list, then can all other bots check if them have something like that to eat when they gets hurted
 	staplefood=		{["default:apple"]=2,["farming:bread"]=5,["mobs:meat"]=8,["mobs:meat_raw"]=3,["mobs:chicken_raw"]=2,["mobs:chicken_cooked"]=6,["mobs:chicken_egg_fried"]=2,["mobs:chicken_raw"]=2},
 	furnishings=		{"default:torch","default:chest","default:furnace","default:chest_locked","default:sign_wall_wood","default:sign_wall_steel","vessels:steel_bottle","vessels:drinking_glass","vessels:glass_bottle"},
@@ -39,6 +40,10 @@
 	},
 }
 
+minetest.after(5, function()
+	aliveai.team_load()
+end)
+
 minetest.register_globalstep(function(dtime)
 	aliveai.max_paths_per_s.timer=aliveai.max_paths_per_s.timer+dtime
 	if aliveai.max_paths_per_s.timer>1 then
@@ -57,15 +62,8 @@ dofile(minetest.get_modpath("aliveai") .. "/tasks.lua")
 dofile(minetest.get_modpath("aliveai") .. "/chat.lua")
 dofile(minetest.get_modpath("aliveai") .. "/bot.lua")
 dofile(minetest.get_modpath("aliveai") .. "/extras.lua")
+dofile(minetest.get_modpath("aliveai") .. "/handlers.lua")
+
+dofile(minetest.get_modpath("aliveai") .. "/settings.lua")
 
 print("[aliveai] api Loaded")
-
-aliveai.create_bot()								-- create standard bots
-aliveai.create_bot({							-- create standard bots 2
-		attack_players=1,
-		name="bot2",
-		team="Jezy",
-		texture="aliveai_skin2.png",
-		stealing=1,
-		steal_chanse=5,
-})

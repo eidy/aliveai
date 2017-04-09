@@ -1,4 +1,99 @@
-﻿aliveai.random=function(a,b)
+﻿aliveai.team_load=function()
+	local t=aliveai.load("team_player")
+	if not t then return end
+	for i, v in pairs(t) do
+		aliveai.team_player[i]=v
+	end
+end
+
+aliveai.team=function(ob,change_team)
+	if type(ob)~="userdata" then return "" end
+	if change_team and type(change_team)~="string" then return "" end
+	if ob:is_player() then
+		local name=ob:get_player_name()
+		if change_team then
+			aliveai.team_player[name]=change_team
+			aliveai.save("team_player",aliveai.team_player)
+			minetest.chat_send_player(name, "You are now a member of team " .. change_team)
+			return
+		end
+		local t=aliveai.team_player[name]
+		if not t then t="Sam" end
+		return t
+	end
+
+	local en=ob:get_luaentity()
+
+	if en and change_team then
+		en.team=change_team
+	elseif aliveai.is_bot(ob) then
+		return en.team
+	elseif en and en.team then
+		return en.team
+	elseif en and en.type then
+		return en.type
+	elseif en and not en.type then
+		return ""
+	end
+	return
+end
+
+aliveai.save=function(name,data)
+	if type(name)~="string" or type(data)~="table" then return end
+	local r=io.open(minetest.get_worldpath() .. "/aliveai", "r")
+	local d
+	if r then
+		d=aliveai.convertdata(r:read("*a"))
+		r:close()
+	else
+		d={}
+	end
+	d[name]=data
+	d=aliveai.convertdata(d)
+	local w=io.open(minetest.get_worldpath() .. "/aliveai", "w")
+	w:write(d)
+	w:close()
+end
+
+aliveai.load=function(name)
+	if type(name)~="string" then return end
+	local r=io.open(minetest.get_worldpath() .. "/aliveai", "r")
+	if not r then return nil end
+	local d=aliveai.convertdata(r:read("*a"))
+	r:close()
+	if not d or d=="" then return {} end
+	return d[name]
+end
+
+aliveai.new_mine=function(self,nodes,need)
+	need=need or 1
+	self.mine={target={},status="search"}
+	for i, v in pairs(nodes) do
+		local search=""
+		if not minetest.registered_nodes[v] then search=v end
+		aliveai.newneed(self,v,need,search)
+	end
+	self.ignoremineitem=""
+	self.ignoreminetime=0
+	self.ignoreminechange=0
+	self.ignoreminetimer=200
+	self.taskstep=0
+	aliveai.rndwalk(self,false)
+end
+
+aliveai.exit_mine=function(self)
+	self.mine=nil
+	self.need=nil
+	self.ignoremineitem=nil
+	self.ignoreminetime=nil
+	self.ignoreminechange=nil
+	self.ignoreminetimer=nil
+	self.taskstep=0
+	aliveai.rndwalk(self)
+	self.done=""
+end
+
+aliveai.random=function(a,b)
 	if type(b)~="number" or type(a)~="number" then
 		a=0
 		b=1

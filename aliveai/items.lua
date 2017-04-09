@@ -1,5 +1,5 @@
 ﻿aliveai.crafttools=function(self,t)
-	if math.random(1,10)~=1 then return end
+	if self.crafting~=1 or math.random(1,10)~=1 then return end
 	if type(self.tools)=="table" then return end
 	for name, s in pairs(aliveai.tools_handler) do
 		if s.try_to_craft and s.tools then
@@ -103,64 +103,6 @@ aliveai.give_to_bot=function(self,clicker)
 	return self
 end
 
-aliveai.use_smartshop=function(self)
-	if self.path and self.smartshop then
-		aliveai.path(self)
-		if self.done=="path" or (math.random(1,10)==1 and aliveai.distance(self,self.smartshop.pos)<self.arm and aliveai.visiable(self,self.smartshop.pos)) then
-			aliveai.exitpath(self)
-			local pay=self.smartshop
-			local inv=minetest.get_inventory({type="detached", name="main"})
-			for i=1,inv:get_size("main"),1 do
-				if inv:get_stack("main",i):get_count()==0 then
-					inv:set_stack("main", i, ItemStack(pay.pay .. " " .. pay.count))
-					break
-				end
-			end
-			local user=aliveai.createuser(self)
-			aliveai.invadd(self,pay.pay,-pay.count,true)
-			smartshop.use_offer(pay.pos,user,pay.i)
-			aliveai.clearinventory(self)
-			self.smartshop=nil
-			aliveai.showstatus(self,"pay: " ..  pay.pay .." " .. pay.count)
-		end
-		return self
-	end
-	if math.random(1,50)~=1 or self.smartshop then return end
-	local np1=minetest.find_node_near(self.object:getpos(), self.distance,{"smartshop:shop"})
-	if np1 then
-		local goto
-		local offer=smartshop.get_offer(np1)
-		for i, v in pairs(offer) do
-			if self.need then
-				for ii, vv in pairs(self.need) do
-				if (vv.item==aliveai.namecut(v.give,true)
-				or (vv.search~="" and vv.search==aliveai.namecut(v.give,true))
-				or math.random(1,20)==1)
-					and self.inv[v.pay] and self.inv[v.pay]>=v.pay_count then
-					goto={pos=np1,i=i,pay=v.pay,count=v.pay_count}
-					break
-				end
-				end
-			elseif math.random(1,3)==1 and v.pay~="" and self.inv[v.pay] and self.inv[v.pay]>=v.pay_count then
-				goto={pos=np1,i=i,pay=v.pay,count=v.pay_count}
-				break
-			end
-		end	
-		if goto then
-			aliveai.showstatus(self,"go to smartshop")
-			local np2=aliveai.neartarget(self,np1,0)
-			if np2 then
-				local path=aliveai.creatpath(self,self.object:getpos(),np2)
-				if path then
-					self.path=path
-					self.smartshop=goto
-					return self
-				end
-			end
-		end
-	end
-end
-
 aliveai.invadd=function(self,add,num,nfeedback)
 -- inventory
 	if not (add and num) or add=="" or num=="" then return self end
@@ -215,7 +157,7 @@ aliveai.invhave=function(self,name,n,getnum)
 					count=count+s
 				end
 			end
-		elseif self.need then
+		elseif self.need and self.crafting==1 then
 			-- if its a group, return an item/node
 			name=aliveai.crafttoneed(self,name,true)
 		end
@@ -283,7 +225,7 @@ aliveai.haveneed=function(self,craft)
 					return self
 				end
 				n=true
-			elseif craft then
+			elseif craft and self.crafting==1 then
 				aliveai.crafting(self,need.item,1,need.num)
 			end
 		end
@@ -498,7 +440,7 @@ end
 
 aliveai.crafting=function(self,name,norecraft,neednum)
 
-	if name==nil or aliveai.enable_build==false then return false end
+	if self.crafting~=1 or name==nil or aliveai.enable_build==false then return false end
 	neednum=neednum or 1
 	if not norecraft then norecraft=0 end
 	norecraft=norecraft+1
@@ -832,10 +774,15 @@ aliveai.createuser=function(self,index)
 	local pos=self.object:getpos()
 	local inv=minetest.get_inventory({type="detached", name="main"})
 	return {
+		get_player_control=aliveai.re({sneak=false,up=false,down=false,left=false,right=false}),
+		get_inventory=aliveai.re({contains_item=aliveai.re(true)}),
 		get_luaentity=aliveai.re(self.object),
 		get_player_name=aliveai.re(self.botname),
-		get_look_horizontal=aliveai.re(aliveai.pointat(self)),
-		get_look_dir=aliveai.re({x=math.cos(yaw),y=math.sin(0),z=math.sin(yaw)}),
+		get_look_horizontal=aliveai.re(0),
+		set_look_horizontal=aliveai.re(0),
+		set_animation=aliveai.re(),
+		set_eye_offset=aliveai.re(),
+		get_look_dir=aliveai.re(aliveai.get_dir(self,aliveai.pointat(self))),
 		get_look_pitch=aliveai.re(math.pi/2),
 		get_look_yaw=aliveai.re(self.object:getyaw()),
 		get_player_control=aliveai.re({jump=false,right=false,left=false,LMB=false,RMB=false,sneak=false,aux1=false,down=false,up=false}),
@@ -862,6 +809,7 @@ aliveai.createuser=function(self,index)
 		right_click=aliveai.re(),
 		set_properties=aliveai.re(),
 		set_animation=aliveai.re(),
+		get_attach=aliveai.re(),
 		set_attach=aliveai.re(),
 		set_detach=aliveai.re(),
 		set_bone_position=aliveai.re(),

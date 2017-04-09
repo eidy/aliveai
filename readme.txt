@@ -1,5 +1,5 @@
 ﻿By AiTechEye
-Version: 4.85
+Version: 4.95
 Licenses: code and media CC0
 
 Alive AI
@@ -87,6 +87,7 @@ botname		""	(the bots name)
 name_color	ffffff	("" to hide name)
 hp		20
 drop_dead_body	1
+crafting		1	(craft things, also on its own way)
 visual		mesh	(drawtype, like "cube")
 basey		0.7	(used to check if a bot are inside a block then jump)
 spawn_y		0	(change y pos on spawn)
@@ -192,6 +193,10 @@ aliveai.namecut(name,group)			cuts down a name, if its able (like default:wood /
 aliveai.generate_house(self)			generate house instructions
 aliveai.showpath(pos,number,pos_is_a_table)	works if aliveai.status=true, number can be 1,2,3 pos_is_a_table can be true or nil
 aliveai.showstatus(self,text,color)		works if aliveai.status=true, color can be 1,2,3,4 (tempoary change the nametag)
+
+aliveai.team(object,change_to_team)		get object team, object or set team
+aliveai.save(name,data)			string/name, table/variable to save
+aliveai.load(name)				string/name to load
 ====================================================================================
 items
 aliveai.invadd(self,item,number,nfeedback)	add or remove to to inventory, nfeedback=no autocraft (can be nil)
@@ -204,6 +209,8 @@ aliveai.eat(self,name)			try to eat an item
 aliveai.spawnpickup(pos,item,number)		spawn item
 aliveai.invdropall(self)			drop all items
 aliveai.use(self)				use tool in self.tools
+aliveai.new_mine(self,nodes,needed_items)	begin to mine, can be usefull to set self.crafting=0
+aliveai.exit_mine(self)			exit mine
 ====================================================================================
 paths
 aliveai.exitpath(self)			exit path walking

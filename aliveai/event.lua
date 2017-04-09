@@ -3,6 +3,9 @@
 	if self.nodehandler and self.path then
 		aliveai.path(self)
 		if self.done=="path" then
+			if type(self.nodehandler.handler)=="table" then
+				self.nodehandler.handler.func(self,self.nodehandler.pos,self.nodehandler.handler.item,self.nodehandler.handler.pos)
+			end
 			if type(self.nodehandler.handler)=="function" then
 				self.nodehandler.handler(self,self.nodehandler.pos)
 			end
@@ -38,7 +41,7 @@
 		end
 	end
 
-	if not keep and math.random(1,20)~=1 then return end
+	if not keep and math.random(1,20)~=1 and not aliveai.constant_node_testing then return end
 	aliveai.showstatus(self,"handling nodes")
 	local p3
 	local pos=self.object:getpos()
@@ -298,13 +301,17 @@ aliveai.searchhelp=function(self)
 		local pos=self.object:getpos()
 		local d=aliveai.distance(self,pos)
 		for _, ob in ipairs(minetest.get_objects_inside_radius(pos, self.distance)) do
-			if ob and ob:getpos() and aliveai.visiable(self,ob:getpos()) and ob:get_luaentity() and ob:get_luaentity().aliveai
+			if ob and ((ob:get_luaentity() and aliveai.visiable(self,ob:getpos()) and ob:get_luaentity().aliveai
 			and ob:get_luaentity().botname~=self.botname
-			and ob:get_luaentity().team==self.team then
+			and ob:get_luaentity().team==self.team) or aliveai.team(ob)==self.team) and not aliveai.is_bot(ob) then
 				local known=aliveai.getknown(self,ob)
 				if known~="fight" and known~="fly" then
-					aliveai.msg[ob:get_luaentity().botname]={name=self.botname,msg=ob:get_luaentity().botname .." come" }
-					aliveai.sayrnd(self,ob:get_luaentity().botname .." come")
+					if ob:is_player() then
+						aliveai.sayrnd(self,ob:get_player_name() .." come")
+					else
+						aliveai.msg[ob:get_luaentity().botname]={name=self.botname,msg=ob:get_luaentity().botname .." come" }
+						aliveai.sayrnd(self,ob:get_luaentity().botname .." come")
+					end
 					if math.random(1,3)==1 then return self end
 				end
 			end
@@ -368,13 +375,14 @@ aliveai.searchobjects=function(self)
 					end
 				end
 				local en=ob:get_luaentity()
-				if ob and ob:getpos() and aliveai.visiable(self,ob:getpos()) and aliveai.viewfield(self,ob) and ob:is_player()
+				if ob and ob:getpos() and aliveai.visiable(self,ob:getpos()) and aliveai.viewfield(self,ob) and (aliveai.team(ob)~=self.team and not aliveai.is_bot(ob))
 				or (en and en.object and en.itemstring==nil and en.type~="" and en.team~=self.team and en.botname~=self.botname) then
 					local known=aliveai.getknown(self,ob)
 					local enemy
-					if en and en.type=="monster" then
+					if (en and en.type=="monster" or aliveai.is_bot(ob)) or ob:is_player() then
 						enemy=true
 					end
+
 					if math.random(1,2)+i==1 then
 						rndob=ob
 					elseif self.attacking==1 or enemy or known=="fight" or (known==nil and self.object:get_hp()<self.hp_max and not (self.attack_players==0 and ob:is_player())) then
@@ -1207,7 +1215,13 @@ aliveai.path=function(self)
 				self.path_timer=0
 				return self
 			elseif self.path_timer>30 then
-				aliveai.exitpath(self)
+				aliveai.jumping(self)
+				if self.path_timer>60 then
+					aliveai.exitpath(self)
+					return self
+				elseif self.object:getvelocity().y==0 then
+					self.object:setyaw(math.random(0,6.28))
+				end
 				aliveai.showstatus(self,"path timeout")
 			elseif self.path[self.pathn] and self.path[self.pathn].y>pos.y+3 then
 				aliveai.exitpath(self)

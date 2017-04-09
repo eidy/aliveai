@@ -181,6 +181,7 @@ end
 
 aliveai.crafttoneed=function(self,a,group_only,neednum)-- needed craft stuff to search or groups
 -- search group
+	if self.crafting~=1 then return end
 	if string.find(a,"group:",1)~=nil then
 		local g=a.split(a,":")
 		for i, v in pairs(minetest.registered_items) do
@@ -480,6 +481,28 @@ minetest.register_node("aliveai:spawner", {
 	}}
 })
 
+minetest.register_craftitem("aliveai:team_gift", {
+	description = "Gift to team (punch a teammember to be changed to their team)",
+	inventory_image = "aliveai_team_gift.png",
+	on_use=function(itemstack, user, pointed_thing)
+		if pointed_thing.type=="object" then
+			local t=aliveai.team(pointed_thing.ref)
+			aliveai.team(user,t)
+			if aliveai.is_bot(pointed_thing.ref) then
+				local name=user:get_player_name()
+				local self=pointed_thing.ref:get_luaentity()
+				if aliveai.getknown(self,user)=="fight" then
+					self.temper=0
+					self.fight=nil
+					aliveai.known(self,user,"")
+				end
+			end
+			itemstack:take_item()
+			return itemstack
+		end
+	end,
+})
+
 local paths={
 {0.2,"bubble.png^[colorize:#0000ffff"},
 {0.2,"bubble.png^[colorize:#ffff00ff"},
@@ -516,3 +539,4 @@ minetest.register_entity("aliveai:path" .. i,{
 	type="",
 })
 end
+paths=nil
