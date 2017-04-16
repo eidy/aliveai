@@ -1,8 +1,40 @@
-﻿aliveai.node_handler=function(self)
+aliveai.rndgoal=function(self)
+	if not self.isrnd or self.build or math.random(1,50)~=1 then return end
+	if self.rndgoal and self.path then
+		aliveai.path(self)
+		if self.done=="path" or (math.random(1,10)==1 and aliveai.distance(self,self.rndgoal)<self.arm) then
+			self.done=""
+			self.rndgoal=nil
+			aliveai.showstatus(self,"random goal success")
+		end
+		return self
+	end
+	local p1=aliveai.random_pos(self)
+	if p1 then
+		local p2=aliveai.neartarget(self,p1)
+		if p2 then
+			local pos=aliveai.roundpos(self.object:getpos())
+			pos.y=pos.y-1
+			local p3=aliveai.creatpath(self,pos,p2)
+			if p3 then
+				self.path=p3
+				self.rndgoal=p1
+				aliveai.showstatus(self,"random goal")
+				aliveai.showpath(p3,1,true)
+				return self
+			end
+		end
+	end
+end
+
+
+
+aliveai.node_handler=function(self)
 	local keep
 	if self.nodehandler and self.path then
 		aliveai.path(self)
 		if self.done=="path" then
+			self.mood=self.mood+1
 			if type(self.nodehandler.handler)=="table" then
 				self.nodehandler.handler.func(self,self.nodehandler.pos,self.nodehandler.handler.item,self.nodehandler.handler.pos)
 			end
@@ -40,8 +72,8 @@
 			end
 		end
 	end
-
-	if not keep and math.random(1,20)~=1 and not aliveai.constant_node_testing then return end
+	if self.mood<10 then return end
+	if (not keep and math.random(1,20)~=1) and not aliveai.constant_node_testing then return end
 	aliveai.showstatus(self,"handling nodes")
 	local p3
 	local pos=self.object:getpos()
@@ -111,7 +143,7 @@ end
 
 
 aliveai.need_helper=function(self)
-	if self.help_need then
+	if self.mood>0 and self.help_need then
 		if self.done=="come" then
 			self.done=""
 			if not self.help_need:get_luaentity() or aliveai.gethp(self.help_need)<=0 then self.help_need=nil return end
@@ -166,7 +198,7 @@ end
 
 aliveai.steal=function(self,ste)
 	local known=aliveai.getknown(self,ste)
-	if self.stealing~=1 or known=="member" or not ste:is_player() then return self end
+	if self.mood<1 or self.stealing~=1 or known=="member" or not ste:is_player() then return self end
 	aliveai.showstatus(self,"stealing")
 	local inv=ste:get_inventory()
 	local ix=0
@@ -300,19 +332,29 @@ aliveai.searchhelp=function(self)
 		aliveai.showstatus(self,"search help")
 		local pos=self.object:getpos()
 		local d=aliveai.distance(self,pos)
-		for _, ob in ipairs(minetest.get_objects_inside_radius(pos, self.distance)) do
-			if ob and ((ob:get_luaentity() and aliveai.visiable(self,ob:getpos()) and ob:get_luaentity().aliveai
-			and ob:get_luaentity().botname~=self.botname
-			and ob:get_luaentity().team==self.team) or aliveai.team(ob)==self.team) and not aliveai.is_bot(ob) then
+		local obs
+		if self.leader==1 then
+			obs=aliveai.active
+		else
+			obs=minetest.get_objects_inside_radius(pos, self.distance)
+		end
+		for _, ob in ipairs(obs) do
+			if ob and aliveai.team(ob)==self.team and not aliveai.same_bot(self,ob) and (aliveai.is_bot(ob) or ob:is_player()) and (self.leader==1 or aliveai.visiable(self,ob:getpos())) then
 				local known=aliveai.getknown(self,ob)
 				if known~="fight" and known~="fly" then
 					if ob:is_player() then
-						aliveai.sayrnd(self,ob:get_player_name() .." come")
+						aliveai.say(self,ob:get_player_name() .." come")
 					else
-						aliveai.msg[ob:get_luaentity().botname]={name=self.botname,msg=ob:get_luaentity().botname .." come" }
-						aliveai.sayrnd(self,ob:get_luaentity().botname .." come")
+						aliveai.msg[ob:get_luaentity().botname]={name=self.botname,msg=ob:get_luaentity().botname .." come"}
+						aliveai.say(self,ob:get_luaentity().botname .." come")
 					end
-					if math.random(1,3)==1 then return self end
+					if self.leader==1 then
+						aliveai.known(ob:get_luaentity(),self.fight,"fight")
+						ob:get_luaentity().fight=self.fight
+						ob:get_luaentity().temper=ob:get_luaentity().temper+2
+					elseif math.random(1,3)==1 then
+						return self
+					end
 				end
 			end
 		end
@@ -360,6 +402,7 @@ end
 
 
 aliveai.searchobjects=function(self)
+		if self.mood<0 then return end
 		local pos=self.object:getpos()
 		local d=aliveai.distance(self,pos)
 		local rndob
@@ -376,7 +419,7 @@ aliveai.searchobjects=function(self)
 				end
 				local en=ob:get_luaentity()
 				if ob and ob:getpos() and aliveai.visiable(self,ob:getpos()) and aliveai.viewfield(self,ob) and (aliveai.team(ob)~=self.team and not aliveai.is_bot(ob))
-				or (en and en.object and en.itemstring==nil and en.type~="" and en.team~=self.team and en.botname~=self.botname) then
+				or (en and en.object and en.itemstring==nil and en.type and en.type~="" and en.team~=self.team and en.botname~=self.botname) then
 					local known=aliveai.getknown(self,ob)
 					local enemy
 					if (en and en.type=="monster" or aliveai.is_bot(ob)) or ob:is_player() then
@@ -385,7 +428,7 @@ aliveai.searchobjects=function(self)
 
 					if math.random(1,2)+i==1 then
 						rndob=ob
-					elseif self.attacking==1 or enemy or known=="fight" or (known==nil and self.object:get_hp()<self.hp_max and not (self.attack_players==0 and ob:is_player())) then
+					elseif (aliveai.team_fight==true or (en and en.type=="animal") or known=="fight") and (self.attacking==1 or enemy or known=="fight" or (known==nil and self.object:get_hp()<self.hp_max and not (self.attack_players==0 and ob:is_player()))) then
 						self.temper=2
 						self.fight=ob
 						self.on_detect_enemy(self,self.fight)
@@ -888,7 +931,7 @@ aliveai.build=function(self)
 -- check if can place, or ignore or exit building
 		if not aliveai.invhave(self,self.build.path[self.build_step].node,1) then
 			local node1=self.build.path[self.build_step].node
-			local node2=aliveai.namecut(self.build.path[self.build_step].node,true)
+			local node2=self.build.path[self.build_step].node
 			if node1==node2 then
 				self.ignore_item[node1]=1
 				self.build_step=self.build_step+1
@@ -984,6 +1027,7 @@ aliveai.buildproblem=function(self)
 		aliveai.showstatus(self,"skip to later")
 		self.build.skiptolater=self.build_step -- skip node to later
 		self.build_step=self.build_step+1
+		self.mood=self.mood-1
 		return self
 	end
 
@@ -1012,6 +1056,7 @@ aliveai.mineproblem=function(self)
 	if self.ignoreminetime>self.ignoreminetimer then
 		if self.ignoreminechange==aliveai.invhave(self,self.ignoremineitem,0,true) then	--if time out and dont have more
 			self.ignore_item[self.ignoremineitem]=1
+			self.mood=self.mood-1
 			self.need[self.ignoremineitem]=nil
 			aliveai.showstatus(self,"ignoring item: " .. self.ignoremineitem)
 			if #self.need==0 then self.need=nil end
@@ -1060,6 +1105,7 @@ aliveai.mine=function(self)
 					self.taskstep=self.taskstep+1
 					aliveai.stand(self)
 					aliveai.showstatus(self,"mine done",3)
+					self.mood=self.mood+5
 					return self
 				end
 			else
@@ -1104,6 +1150,7 @@ aliveai.mine=function(self)
 			aliveai.exitpath(self)
 			self.mine.status="search"
 			aliveai.showstatus(self,"path failed")
+			self.mood=self.mood-1
 			return self
 		end
 
@@ -1112,6 +1159,7 @@ aliveai.mine=function(self)
 			self.time=self.otime
 			self.done=""
 			self.mine.status="dig"
+			self.mood=self.mood+1
 			aliveai.exitpath(self)
 		end
 	end
@@ -1131,7 +1179,9 @@ aliveai.mine=function(self)
 		aliveai.dig(self,self.mine.target)
 		if aliveai.haveneed(self) then
 			self.mine.status="search"
+			self.mood=self.mood+1
 		else
+			self.mood=self.mood+5
 			self.mine=nil
 			self.ignore_item={}
 			self.done="mine"
@@ -1202,6 +1252,7 @@ aliveai.path=function(self)
 					aliveai.showstatus(self,"path blocked")
 					self.object:setyaw(math.random(0,6.28))
 					aliveai.walk(self)
+					self.mood=self.mood-1
 					return 
 				end
 			end
@@ -1218,11 +1269,11 @@ aliveai.path=function(self)
 				aliveai.jumping(self)
 				if self.path_timer>60 then
 					aliveai.exitpath(self)
+					aliveai.showstatus(self,"path timeout")
 					return self
-				elseif self.object:getvelocity().y==0 then
-					self.object:setyaw(math.random(0,6.28))
 				end
-				aliveai.showstatus(self,"path timeout")
+				aliveai.showstatus(self,"path problem")
+
 			elseif self.path[self.pathn] and self.path[self.pathn].y>pos.y+3 then
 				aliveai.exitpath(self)
 				aliveai.showstatus(self,"fell from path")

@@ -1,4 +1,4 @@
-﻿--print(debug.getinfo(2).name)				-- get name from calling function
+--print(debug.getinfo(2).name)				-- get name from calling function
 
 if io.open(minetest.get_modpath("default") .. "/models/character.b3d","r") then
 	print("[aliveai] default/character.b3d is used as default model")

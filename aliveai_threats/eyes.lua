@@ -1,4 +1,4 @@
-﻿aliveai_threats_eyes={active={}}
+aliveai_threats_eyes={active={}}
 
 minetest.register_abm({
 	nodenames = {"group:tree"},

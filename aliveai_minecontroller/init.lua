@@ -1,4 +1,4 @@
-﻿aliveai_minecontroller={timer=0,users={}}
+aliveai_minecontroller={timer=0,users={}}
 
 minetest.register_craft({
 	output = "aliveai_minecontroller:controller",

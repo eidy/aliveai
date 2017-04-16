@@ -1,4 +1,4 @@
-﻿aliveai_nitroglycerine={}
+aliveai_nitroglycerine={}
 aliveai_nitroglycerine.explode=function(pos,node)
 	if not node then node={} end
 
@@ -34,6 +34,7 @@ aliveai_nitroglycerine.explode=function(pos,node)
 		local rad = vector.length(vector.new(x,y,z))
 		local v = area:index(pos.x+x,pos.y+y,pos.z+z)
 		local p={x=pos.x+x,y=pos.y+y,z=pos.z+z}
+
 		if data[v]~=air and node.radius/rad>=1 and minetest.is_protected(p, node.user_name)==false then
 
 			local no=minetest.registered_nodes[minetest.get_node(p).name]

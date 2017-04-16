@@ -1,4 +1,4 @@
-﻿minetest.register_craft({
+minetest.register_craft({
 	output = "aliveai_massdestruction:walking_bomb 3",
 	recipe = {
 		{"default:mese_crystal_fragment","default:coal_lump"},
@@ -97,6 +97,7 @@ minetest.register_entity("aliveai_massdestruction:bomb",{
 	makes_footstep_sound = false,
 	automatic_rotate = false,
 	on_activate=function(self, staticdata)
+		self.time2=math.random(1,20)
 		self.object:setacceleration({x =0, y =-10, z =0})
 		self.object:setvelocity({x=math.random(-15,15),y=math.random(10,15),z=math.random(-15,15)})
 		return self
@@ -105,31 +106,40 @@ minetest.register_entity("aliveai_massdestruction:bomb",{
 		self.time=self.time+dtime
 		self.time2=self.time2-dtime
 		local v=self.object:getvelocity()
-		if self.time2>1 and v.y==0 then
-			local pos=self.object:getpos()
-			local n=minetest.registered_nodes[minetest.get_node({x=pos.x,y=pos.y-1,z=pos.z})]
-			if n and n.walkable then
-				self.time2=0.1
-			end
+		if self.time2>1 and v.y==0 and self.last_y<0 then
+			self.time2=0
+			self.expl=math.random(1,10)
 		end
 		if self.time<0.1 then return self end
+		self.last_y=v.y
 		self.time=0
-		for _, ob in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), 2)) do
-			local en=ob:get_luaentity()
-			if not (en and en.aliveaibomb) then
-				self.time2=-1
-				return self
+
+
+		if not self.expl then
+			for _, ob in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), 2)) do
+				local en=ob:get_luaentity()
+				if not (en and en.aliveaibomb) then
+					self.time2=-1
+					return self
+				end
 			end
 		end
 		if self.time2<0 then
-			aliveai_nitroglycerine.explode(self.object:getpos(),{radius=3,set="air",drops=0,place={"air","air"}})
-			self.object:remove()
+			if self.expl and math.random(1,self.expl)==1 then
+				aliveai_nitroglycerine.explode(self.object:getpos(),{radius=3,set="air",drops=0,place={"air","air"}})
+				self.object:remove()
+			elseif not self.expl then
+				self.expl=math.random(1,10)
+			else
+				self.time2=0.5
+			end
 		end
 		return self
 	end,
 	time=0,
 	time2=10,
 	type="",
+	last_y=0,
 	aliveaibomb=1
 })
 

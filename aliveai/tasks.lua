@@ -1,4 +1,4 @@
-﻿aliveai.savedata.taskbuild=function(self)
+aliveai.savedata.taskbuild=function(self)
 	if self.task=="build" then
 		return {
 			house=self.house,
@@ -40,8 +40,8 @@ aliveai.task_stay_at_home=function(self)
 		if math.random(1,10)==1 then
 			local d=aliveai.distance(self,self.home)
 			if d>self.distance*3 then
-				self.object:setpos(self.home)
 				aliveai.showstatus(self,"teleport home")
+				self.object:setpos(self.home)
 				return self
 			elseif d>self.distance*1.5 then
 				local pos=self.object:getpos()

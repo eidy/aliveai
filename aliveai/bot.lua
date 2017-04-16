@@ -1,4 +1,4 @@
-﻿aliveai.bot=function(self, dtime)
+aliveai.bot=function(self, dtime)
 	aliveai.bots_delay=aliveai.bots_delay+dtime
 	self.timer=self.timer+dtime
 	self.timerfalling=self.timerfalling+dtime
@@ -12,6 +12,7 @@
 	end
 
 --betweens
+
 	if not aliveai.dmgbynode(self) then return self end
 	if self.step(self,dtime) or self.controlled==1 then return self end
 	aliveai.jumping(self)-- if need to jump
@@ -22,8 +23,11 @@
 	if aliveai.light(self) then return self end
 	if aliveai.node_handler(self) then return self end
 	if aliveai.timer(self) then return self end		-- remove monsters
+	if aliveai.rndgoal(self) then return self end
+
 	aliveai.msghandler(self)
 	
+
 	aliveai.pickup(self)-- if can pick up items
 
 --betweens helpers
@@ -212,6 +216,7 @@ on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 			self.hp=self.hp-tool_capabilities.damage_groups.fleshy
 			self.object:set_hp(self.hp)
 			dmg=tool_capabilities.damage_groups.fleshy
+			self.mood=self.mood-2
 		end
 -- death
 		aliveai.showhp(self)
@@ -263,11 +268,13 @@ on_punch=function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 				end
 				if math.random(1,3)==1 then aliveai.sayrnd(self,"ahh") end
 				self.fly=puncher
+				aliveai.known(self,puncher,"fly")
 			elseif self.fighting==1 then
 				if self.temper<5 then
 					self.temper=self.temper+1
 				end
 				self.fight=puncher
+				aliveai.known(self,puncher,"fight")
 				if math.random(1,3)==1 then aliveai.sayrnd(self,"ouch") end
 			end
 			return self
@@ -284,6 +291,9 @@ on_activate=function(self, staticdata)
 			self.ignore_nodes={}
 			self.known={}
 			self.old=r.old
+			self.mood=r.mood
+			self.team=r.team
+			self.namecolor=r.namecolor
 			self.known=r.known
 			self.inv=r.inv
 			self.ignore_item=r.ignore_item
@@ -325,12 +335,24 @@ on_activate=function(self, staticdata)
 			aliveai.max(self)
 			self.on_spawn(self)
 			aliveai.showstatus(self,"new bot spawned")
+			if self.type=="npc" and math.random(1, aliveai.get_random_stuff_chance)==1 then
+				local itmnum=0
+				for i, v in pairs(minetest.registered_items) do
+					if math.random(1,20)==1 then
+						if minetest.get_all_craft_recipes(i) and i~="air" then
+							self.inv[i]=1
+							itmnum=itmnum+1
+							if itmnum>9 then break end
+						end
+					end
+				end
+			end
 		else
 			aliveai.max(self)
 			self.on_load(self)
 			aliveai.showstatus(self,"bot loaded")
 		end
-		self.lastitem_name="some"
+		self.lastitem_name="stuff"
 		self.lastitem_count=1
 		self.hp=self.object:get_hp()
 		return self
@@ -348,6 +370,9 @@ get_staticdata = function(self)
 			ignore_nodes=self.ignore_ingnore_nodes,
 			botname=self.botname,
 			dmg=self.dmg,
+			mood=self.mood,
+			team=self.team,
+			namecolor=self.namecolor,
 			}
 		if self.home then r.home=self.home end
 		if self.resources then r.resources=self.resources end
@@ -366,34 +391,37 @@ get_staticdata = function(self)
 		return aliveai.convertdata(r)
 	end,
 on_step=aliveai.bot,
-	on_spoken_to= def.on_spoken_to or aliveai.on_spoken_to,
-	visual= def.visual or "mesh",
-	basey= def.basey or 0.7,
-	old= 0,
-	kill_deep_falling= def.kill_deep_falling or 1,
 	botname=def.botname or "",
-	dmg= def.dmg or 1,
 	namecolor= def.name_color or "ffffff",
+	timerfalling= 0,
+	aliveai= true,
+	old= 0,
 	temper= 0,
+	mood=10,
 	rnd= 0,
 	isrnd= false,
-	arm= def.arm or 5,
 	done="",
-	crafting= def.crafting or 1,
-	avoidy= def.avoid_height or 6,
 	taskstep= 0,
 	task= "",
-	house=def.house or "",
 	pathn= 1,
 	anim= "",
 	timer= 0,
 	time= 1,
 	otime= 1,
 	timer3= 0,
-	timerfalling= 0,
-	aliveai= true,
+--define
+	arm= def.arm or 5,
+	dmg= def.dmg or 1,
+	house=def.house or "",
+	leader=def.leader or 0,
+	team= def.team or aliveai.default_team,
+	visual= def.visual or "mesh",
+	basey= def.basey or 0.7,
+	damage_by_blocks= def.damage_by_blocks or 1,
+	kill_deep_falling= def.kill_deep_falling or 1,
+	crafting= def.crafting or 1,
+	avoidy= def.avoid_height or 6,
 	drop_dead_body=def.drop_dead_body or 1,
-	team= def.team or "Sam",
 	type= def.type or "npc",
 	distance= def.distance or 15,
 	tools= def.tools or "",
@@ -423,6 +451,8 @@ on_step=aliveai.bot,
 	lightdamage=def.hurts_by_light or 1,
 	annoyed_by_staring= def.annoyed_by_staring or 1,
 	drowning= def.drowning or 1,
+--functions
+	on_spoken_to= def.on_spoken_to or aliveai.on_spoken_to,
 	on_fighting= def.on_fighting or aliveai.do_nothing,
 	on_escaping= def.on_escaping or aliveai.do_nothing,
 	on_punching= def.on_punching or aliveai.do_nothing,
@@ -437,13 +467,13 @@ on_step=aliveai.bot,
 	on_meet= def.on_meet or aliveai.do_nothing,
 	step= def.on_step or aliveai.do_nothing,
 	on_dig= def.on_dig or aliveai.do_nothing,
+--tasks
 	task1= def.task1 or aliveai.task_build,
 	task2= def.task2 or aliveai.task_stay_at_home,
 	task3= def.task3 or aliveai.do_nothing,
 	task4= def.task4 or aliveai.do_nothing,
 	task5= def.task5 or aliveai.do_nothing,
 })
-
 def.spawn_in= def.spawn_in or "air"
 def.spawn_chance= def.spawn_chance or 1000
 

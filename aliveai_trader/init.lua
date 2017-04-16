@@ -1,4 +1,4 @@
-﻿aliveai_trader={}
+aliveai_trader={}
 
 aliveai.savedata.trader=function(self)
 	if self.trader then
@@ -52,6 +52,7 @@ aliveai.create_bot({
 		building=0,
 		annoyed_by_staring=0,
 		hp=40,
+		name_color="ffff00",
 	on_step=function(self,dtime)
 		if self.offering then
 			aliveai.rndwalk(self,false)
@@ -70,7 +71,7 @@ aliveai.create_bot({
 	end,
 	on_spawn=function(self)
 			self.botname="Trader: " .. self.botname
-			self.object:set_properties({nametag=self.botname,nametag_color="#ffffff"})
+			self.object:set_properties({nametag=self.botname,nametag_color="#" .. self.botname})
 			self.trader_inventory={}
 			self.trader={}
 			self.trader_select=1
@@ -358,7 +359,12 @@ aliveai.create_bot({
 		building=0,
 		annoyed_by_staring=0,
 		hp=40,
+		name_color="ffff00",
 		crafting=0,
+	on_spawn=function(self)
+		self.botname="worker: " .. self.botname
+		self.object:set_properties({nametag=self.botname,nametag_color="#" .. self.botname})
+	end,
 	on_click=function(self,clicker)
 		if self.work_name and self.work_name~=clicker:get_player_name() then return end
 		self.offering=true

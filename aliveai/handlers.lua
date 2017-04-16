@@ -1,4 +1,4 @@
-﻿aliveai.drive_vehicle=function(self,pos,vehicle,p)
+aliveai.drive_vehicle=function(self,pos,vehicle,p)
 	if not self.inv[vehicle] or self.object:get_attach() then return end
 	local n
 
@@ -241,8 +241,8 @@ aliveai.use_smartshop=function(self)
 		for i, v in pairs(offer) do
 			if self.need then
 				for ii, vv in pairs(self.need) do
-				if (vv.item==aliveai.namecut(v.give,true)
-				or (vv.search~="" and vv.search==aliveai.namecut(v.give,true))
+				if (vv.item==v.give
+				or (vv.search~="" and vv.search==v.give)
 				or math.random(1,20)==1)
 					and self.inv[v.pay] and self.inv[v.pay]>=v.pay_count then
 					goto={pos=np1,i=i,pay=v.pay,count=v.pay_count}

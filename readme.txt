@@ -1,5 +1,5 @@
 ﻿By AiTechEye
-Version: 4.95
+Version: 5.6
 Licenses: code and media CC0
 
 Alive AI
@@ -21,6 +21,9 @@ bots can call bots like: <name> come
 players can do: <name> come
 and <team> come
 default teams are Sam and Jezy ... eg: Sam come
+
+you can also rightclick them instead of call
+
 
 Commands:
 enable/diable bot status
@@ -133,7 +136,8 @@ annoyed_by_staring 1	(attacks objects if them are near it after a while)
 drowning		1
 usearmor		1	use the armor and wieldview
 kill_deep_falling	1	kills the bot, when they are falling and becomes inactivated
-
+leader		0	can command bots in bigger extent
+damage_by_blocks	1	hurted by blocks like lava, fire, toxic...
 on_step=function(self,dtime)
 	return self
 end
@@ -189,6 +193,8 @@ aliveai.searchhelp(self)			call bots from same team
 aliveai.samepos(pos1,pos2)			if positions is same or very near
 aliveai.roundpos(pos)
 
+aliveai.random_pos(self,Min,Max)		self or position, min distance max distance: returns a randomly position where you can stand on
+
 aliveai.namecut(name,group)			cuts down a name, if its able (like default:wood / group:wood to w), if group is true return cut to group (like w to group:wood)
 aliveai.generate_house(self)			generate house instructions
 aliveai.showpath(pos,number,pos_is_a_table)	works if aliveai.status=true, number can be 1,2,3 pos_is_a_table can be true or nil
@@ -197,6 +203,12 @@ aliveai.showstatus(self,text,color)		works if aliveai.status=true, color can be 
 aliveai.team(object,change_to_team)		get object team, object or set team
 aliveai.save(name,data)			string/name, table/variable to save
 aliveai.load(name)				string/name to load
+====================================================================================
+bot
+aliveai.get_bot_by_name(name)		return bot object by name or nil
+aliveai.same_bot(self,object)			checks if the object is it self
+aliveai.get_bot_name(object)			return bot name or ""
+aliveai.is_bot(object)			true or false
 ====================================================================================
 items
 aliveai.invadd(self,item,number,nfeedback)	add or remove to to inventory, nfeedback=no autocraft (can be nil)

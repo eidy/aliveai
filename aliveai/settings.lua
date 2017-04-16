@@ -1,8 +1,9 @@
-﻿-- add / change settings in here
+-- add / change settings in here
 
 
 --aliveai.character_model="character.b3d"	-- character model, will be automatically choose model depends on what mod is used.
 
+aliveai.team_fight=true			--attacking members from other teams
 
 aliveai.constant_node_testing=false		-- constantly checks if bots can use nodes / vehicles, usefull for test vehilces
 
@@ -11,13 +12,15 @@ aliveai.enable_build=true			-- makes bots can build
 aliveai.status=false				-- show bot status/dev mode (using more cpy)  /aliveai status=true /aliveai status=false
 aliveai.tools=1				-- hide bot tools
 aliveai.get_everything_to_build_chance=50	-- get everything bots need to build chance
+aliveai.get_random_stuff_chance=50		-- get random stuff on spawn (npc only)
+
 aliveai.max_delay=100			-- max bot delay/lag
 aliveai.max_new_bots=10			-- max spawning new bots, will be called old if they has been inactive
 aliveai.lifetimer=60				-- remove unbehavior none nps
 
-aliveai.team_player["singleplayer"]="sam"	--the default team player(s) will be within
+aliveai.default_team="Sam"
 
-aliveai.staplefood=				{["default:apple"]=2,["farming:bread"]=5,["mobs:meat"]=8,["mobs:meat_raw"]=3,["mobs:chicken_raw"]=2,["mobs:chicken_cooked"]=6,["mobs:chicken_egg_fried"]=2,["mobs:chicken_raw"]=2}
+aliveai.staplefood=				{["default:apple"]=2,["farming:bread"]=5,["mobs:meat"]=8,["mobs:meat_raw"]=3,["mobs:chicken_raw"]=2,["mobs:chicken_cooked"]=6,["mobs:chicken_egg_fried"]=2,["mobs:chicken_raw"]=2,["mobs:pork_raw"]=4,["mobs:pork_cooked"]=8}
 aliveai.furnishings=				{"default:torch","default:chest","default:furnace","default:chest_locked","default:sign_wall_wood","default:sign_wall_steel","vessels:steel_bottle","vessels:drinking_glass","vessels:glass_bottle"}
 aliveai.basics=				{"default:desert_stone","default:sandstonebrick","default:sandstone","default:snowblock","default:ice","default:dirt","default:sand","default:desert_sand","default:silver_sand","default:stone","default:leaves"}
 aliveai.windows=				{"default:glass"}
@@ -30,6 +33,8 @@ aliveai.tools_handler["default"]={			-- see extras.lua for use
 aliveai.nodes_handler={			-- dig, mesecon_on, mesecon_off, punch, function
 	["default:apple"]="dig",["aliveai_ants:antbase"]="dig",["tnt:tnt"]="dig",["tnt:tnt_burning"]="dig",["fire:basic_flame"]="dig",
 }
+
+
 
 
 aliveai.create_bot()				-- create a standard bot

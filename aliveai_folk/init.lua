@@ -1,4 +1,4 @@
-﻿aliveai.create_bot({
+aliveai.create_bot({
 		name="folk1",
 		texture="aliveai_folk1.png",
 		arm=3,
@@ -121,4 +121,37 @@ aliveai.create_bot({
 			e:setvelocity({x=x,y=y,z=z})
 			return self
 		end
+})
+
+aliveai.create_bot({
+		name="folk18",
+		texture="aliveai_folk18.png",
+		hp=50,
+		leader=1,
+		name_color="FF00FFFF",
+		on_step=function(self,dtime)
+			if self.fight and not self.command then
+				self.command=1
+				aliveai.searchhelp(self)
+			elseif self.command and not self.fight then
+				self.command=nil
+			end
+		end,
+})
+
+aliveai.create_bot({
+		name="folk19",
+		texture="aliveai_folk19.png",
+		hp=10,
+		fighting=0,
+		visual_size={x=0.8,y=0.8},
+		collisionbox={-0.3,-0.8,-0.3,0.3,0.65,0.3},
+})
+aliveai.create_bot({
+		name="folk20",
+		texture="aliveai_folk20.png",
+		hp=10,
+		fighting=0,
+		visual_size={x=0.8,y=0.8},
+		collisionbox={-0.3,-0.8,-0.3,0.3,0.65,0.3},
 })

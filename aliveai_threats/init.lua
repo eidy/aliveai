@@ -1,4 +1,4 @@
-﻿aliveai_threats={c4={},debris={}}
+aliveai_threats={c4={},debris={}}
 
 dofile(minetest.get_modpath("aliveai_threats") .. "/eyes.lua")
 
@@ -358,6 +358,166 @@ minetest.register_node("aliveai_threats:gass", {
 	liquid_alternative_source = "aliveai_threats:gass",
 	groups = {liquid = 4,crumbly = 1}
 })
+
+if minetest.get_modpath("fire")~=nil then
+
+aliveai.create_bot({
+		drop_dead_body=0,
+		attack_players=1,
+		name="lava",
+		team="lava",
+		texture="default_lava.png",
+		attacking=1,
+		talking=0,
+		light=0,
+		building=0,
+		start_with_items={["default:obsidian"]=1,["default:obsidian_shard"]=3},
+		type="monster",
+		hp=50,
+		dmg=8,
+		escape=0,
+		name_color="",
+		attack_chance=2,
+		damage_by_blocks=0,
+		spawn_on={"default:lava_source","default:lava_flowing"},
+		spawn_in="default:lava_source",
+	on_load=function(self)
+		self.hp2=self.object:get_hp()
+	end,
+	on_step=function(self,dtime)
+		if (self.fight and math.random(1,3)==1) or math.random(1,10)==1 then
+			local pos=self.object:getpos()
+			for y=-2,4,1 do
+			for x=-2,4,1 do
+			for z=-2,4,1 do
+				local p1={x=pos.x+x,y=pos.y+y,z=pos.z+z}
+				local p2={x=pos.x+x,y=pos.y+y-1,z=pos.z+z}
+				local no1=minetest.get_node(p1).name
+				local no2=minetest.get_node(p2).name
+				if not (minetest.registered_nodes[no1] and minetest.registered_nodes[no2]) then return end
+				if minetest.get_item_group(no1, "igniter")==0 and minetest.registered_nodes[no1].buildable_to and minetest.registered_nodes[no2].walkable and aliveai.visiable(pos,p1) then
+					minetest.set_node(p1, {name = "fire:basic_flame"})
+				end
+			end
+			end
+			end
+		end
+	end,
+	on_punched=function(self,puncher)
+		if self.hp2 and self.hp2-self.object:get_hp()<5 then
+			self.object:set_hp(self.hp2)
+			return self
+		end
+		local pos=self.object:getpos()
+		minetest.add_particlespawner({
+			amount = 5,
+			time =0.05,
+			minpos = pos,
+			maxpos = pos,
+			minvel = {x=-2, y=-2, z=-2},
+			maxvel = {x=1, y=0.5, z=1},
+			minacc = {x=0, y=-8, z=0},
+			maxacc = {x=0, y=-10, z=0},
+			minexptime = 2,
+			maxexptime = 1,
+			minsize = 0.1,
+			maxsize = 2,
+			texture = "default_lava.png",
+			collisiondetection = true,
+		})
+	end,
+	on_death=function(self,puncher,pos)
+		if not self.ex then
+			self.ex=true
+			aliveai_nitroglycerine.explode(pos,{
+				radius=7,
+				place={"fire:basic_flame","fire:basic_flame"},
+			})
+		end
+		return self
+	end,
+})
+
+
+aliveai.create_bot({
+		drop_dead_body=0,
+		attack_players=1,
+		name="fire",
+		team="lava",
+		texture="fire_basic_flame.png",
+		attacking=1,
+		talking=0,
+		light=0,
+		building=0,
+		start_with_items={["default:obsidian"]=1,["default:obsidian_shard"]=3},
+		type="monster",
+		hp=30,
+		name_color="",
+		attack_chance=2,
+		damage_by_blocks=0,
+		spawn_on={"fire:basic_flame"},
+		dmg=5,
+		escape=0,
+	on_load=function(self)
+		self.hp2=self.object:get_hp()
+	end,
+	on_step=function(self,dtime)
+		if (self.fight and math.random(1,3)==1) or math.random(1,10)==1 then
+			local pos=self.object:getpos()
+			for y=-1,1,1 do
+			for x=-1,1,1 do
+			for z=-1,1,1 do
+				local p1={x=pos.x+x,y=pos.y+y,z=pos.z+z}
+				local p2={x=pos.x+x,y=pos.y+y-1,z=pos.z+z}
+				local no1=minetest.get_node(p1).name
+				local no2=minetest.get_node(p2).name
+				if not (minetest.registered_nodes[no1] and minetest.registered_nodes[no2]) then return end
+				if minetest.get_item_group(no1, "igniter")==0 and minetest.registered_nodes[no1].buildable_to and minetest.registered_nodes[no2].walkable and aliveai.visiable(pos,p1) then
+					minetest.set_node(p1, {name = "fire:basic_flame"})
+				end
+			end
+			end
+			end
+		end
+	end,
+	on_punched=function(self,puncher)
+		if self.hp2 and self.hp2-self.object:get_hp()<5 then
+			self.object:set_hp(self.hp2)
+			return self
+		end
+		local pos=self.object:getpos()
+		minetest.add_particlespawner({
+			amount = 5,
+			time =0.05,
+			minpos = pos,
+			maxpos = pos,
+			minvel = {x=-2, y=-2, z=-2},
+			maxvel = {x=1, y=0.5, z=1},
+			minacc = {x=0, y=-8, z=0},
+			maxacc = {x=0, y=-10, z=0},
+			minexptime = 2,
+			maxexptime = 1,
+			minsize = 0.1,
+			maxsize = 2,
+			texture = "fire_basic_flame.png",
+			collisiondetection = true,
+		})
+	end,
+	on_death=function(self,puncher,pos)
+		if not self.ex then
+			self.ex=true
+			aliveai_nitroglycerine.explode(pos,{
+				radius=5,
+				place={"fire:basic_flame","fire:basic_flame"},
+			})
+		end
+		return self
+	end,
+})
+end
+
+
+
 
 
 end
@@ -985,56 +1145,16 @@ minetest.register_tool("aliveai_threats:quantumcore", {
 				user:setpos(pos)
 			end
 		else
-			aliveai_threats.quantumcoremove(user)	
+			local p=aliveai.random_pos(user:getpos(),15)
+			if p then user:setpos(p) end
 		end
 
 	end,
 	on_place=function(itemstack, user, pointed_thing)
-		aliveai_threats.quantumcoremove(user)	
+		local p=aliveai.random_pos(user:getpos(),15)
+		if p then user:setpos(p) end	
 	end
 })
-
-aliveai_threats.quantumcoremove=function(user)
-			distance=15
-			local pos=aliveai.roundpos(user:getpos())
-			local tpto={x=pos.x,y=pos.y,z=pos.z}
-			local tpto_d=0
-			local opos={x=pos.x,y=pos.y,z=pos.z}
-
-			local air=minetest.get_content_id("air")
-			local pos1 = vector.subtract(pos, distance)
-			local pos2 = vector.add(pos, distance)
-			local vox = minetest.get_voxel_manip()
-			local min, max = vox:read_from_map(pos1, pos2)
-			local area = VoxelArea:new({MinEdge = min, MaxEdge = max})
-			local data = vox:get_data()
-			for z = -distance, distance do
-			for y = -distance, distance do
-			for x = -distance, distance do
-				local v = area:index(pos.x+x,pos.y+y,pos.z+z)
-				local p={x=pos.x+x,y=pos.y+y-1,z=pos.z+z}
-				local n=minetest.registered_nodes[minetest.get_node(p).name]
-				if data[v]==air and n and n.walkable and math.random(1,10)==1 then
-					local a=true
-					for i=1,3,1 do
-						local p2={x=pos.x+x,y=pos.y+y+i,z=pos.z+z}
-						local n=minetest.registered_nodes[minetest.get_node(p2).name]
-						if not n or n.walkable then a=false end
-					end
-					if a and aliveai.distance(opos,p)>tpto_d then
-						p.y=p.y+1
-						tpto=p
-						tpto_d=aliveai.distance(opos,p)
-					end
-				end
-			end
-			end
-			end
-			if tpto then
-				user:setpos(tpto)
-			end
-end
-
 
 aliveai.create_bot({
 		attack_players=1,
@@ -1076,41 +1196,8 @@ aliveai.create_bot({
 			end
 		elseif self.fly and (self.epunched or aliveai.distance(self,self.fly:getpos())<self.distance) then
 			self.epunched=nil
-			local pos=aliveai.roundpos(self.object:getpos())
-			local air=minetest.get_content_id("air")
-			local pos1 = vector.subtract(pos, self.distance)
-			local pos2 = vector.add(pos, self.distance)
-			local vox = minetest.get_voxel_manip()
-			local min, max = vox:read_from_map(pos1, pos2)
-			local area = VoxelArea:new({MinEdge = min, MaxEdge = max})
-			local data = vox:get_data()
-			for z = -self.distance, self.distance do
-			for y = -self.distance, self.distance do
-			for x = -self.distance, self.distance do
-				local v = area:index(pos.x+x,pos.y+y,pos.z+z)
-				local p={x=pos.x+x,y=pos.y+y-1,z=pos.z+z}
-				local n=minetest.registered_nodes[minetest.get_node(p).name]
-				if data[v]==air and n and n.walkable and not (self.tpto_d and math.random(1,10)~=1) then
-					local a=true
-					for i=1,3,1 do
-						local p2={x=pos.x+x,y=pos.y+y+i,z=pos.z+z}
-						local n=minetest.registered_nodes[minetest.get_node(p2).name]
-						if not n or n.walkable then a=false end
-					end
-					if a and (not self.tpto_d or aliveai.distance(self.fly:getpos(),p)>self.tpto_d) then
-						p.y=p.y+2
-						self.tpto=p
-						self.tpto_d=aliveai.distance(self.fly:getpos(),p)
-					end
-				end
-			end
-			end
-			end
-			if self.tpto then
-				self.object:setpos(self.tpto)
-				self.tpto=nil
-				self.tpto_d=nil
-			end
+			local p=aliveai.random_pos(self.fly:getpos(),15)
+			if p then self.object:setpos(p) end
 		end
 
 		local p=self.object:getpos()

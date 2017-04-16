@@ -1,14 +1,17 @@
-﻿aliveai={
+aliveai={
 	character_model="character.b3d",	--character model
+	default_team="Sam",
 	check_spawn_space=true,
 	enable_build=true,
 	status=false,			--show bot status
 	tools=1,				--hide bot tools
 	get_everything_to_build_chance=50,
+	get_random_stuff_chance=50,	-- get random stuff on spawn
 	max_delay=100,			-- max run / bot delay
 	bots_delay=0,
 	bots_delay2=0,
 	max_new_bots=10,
+	team_fight=true,
 	lifetimer=60,			--remove unbehavior none nps's
 	max_paths_per_s={timer=0,times=10,checked=0},
 	msg={},				--messages to bots
@@ -19,15 +22,13 @@
 	mesecons=minetest.get_modpath("mesecons")~=nil,
 	loaddata={},			--functions
 	savedata={},			--functions
-	team_player={singleplayer="sam"},
-
+	team_player={},
 				--staplefood database, add eatable stuff to the list, then can all other bots check if them have something like that to eat when they gets hurted
 	staplefood=		{["default:apple"]=2,["farming:bread"]=5,["mobs:meat"]=8,["mobs:meat_raw"]=3,["mobs:chicken_raw"]=2,["mobs:chicken_cooked"]=6,["mobs:chicken_egg_fried"]=2,["mobs:chicken_raw"]=2},
 	furnishings=		{"default:torch","default:chest","default:furnace","default:chest_locked","default:sign_wall_wood","default:sign_wall_steel","vessels:steel_bottle","vessels:drinking_glass","vessels:glass_bottle"},
 	basics=			{"default:desert_stone","default:sandstonebrick","default:sandstone","default:snowblock","default:ice","default:dirt","default:sand","default:desert_sand","default:silver_sand","default:stone","default:leaves"},
 	windows=		{"default:glass"},
 	ladders=			{"default:ladder_wood","default:ladder_steel"},
-	standard={"w","s"},	--short names/group (wood stone) have to be added to the "aliveai.namecut" and "aliveai.newneed"
 	tools_handler={		-- see extras.lua for use
 		["default"]={
 			try_to_craft=true,

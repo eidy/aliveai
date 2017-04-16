@@ -1,4 +1,4 @@
-﻿aliveai.crafttools=function(self,t)
+aliveai.crafttools=function(self,t)
 	if self.crafting~=1 or math.random(1,10)~=1 then return end
 	if type(self.tools)=="table" then return end
 	for name, s in pairs(aliveai.tools_handler) do
@@ -76,20 +76,22 @@ end
 
 aliveai.give_to_bot=function(self,clicker)
 	local stack=clicker:get_wielded_item()
-	if stack:get_name()=="" or  stack:get_name()=="aliveai_minecontroller:controller" then
+	if stack:get_name()=="" or stack:get_name()=="aliveai:team_gift" or stack:get_name()=="aliveai_minecontroller:controller" then
 		aliveai.on_spoken_to(self,self.botname,clicker:get_player_name(),"come")
 		return 
 	end
 	if stack:get_name()=="aliveai_minecontroller:controller" then return end
+	self.mood=self.mood+1
 	local inv=clicker:get_inventory()
 	local i=clicker:get_wield_index()
 	local hp=self.object:get_hp()
 	aliveai.invadd(self,stack:get_name(),stack:get_count())
 	if self.need then
-		local name=aliveai.namecut(stack:get_name(),true)
+		local name=stack:get_name()
 		for ii, vv in pairs(self.need) do
 			if vv.item==name or vv.search==name then
 				aliveai.known(self,clicker,"member")
+				self.mood=self.mood+2
 				aliveai.sayrnd(self,"thanks",clicker:get_player_name())
 				break
 			end
@@ -97,6 +99,7 @@ aliveai.give_to_bot=function(self,clicker)
 	end
 	if hp<self.object:get_hp() then
 		aliveai.known(self,clicker,"member")
+		self.mood=self.mood+2
 		aliveai.sayrnd(self,"thanks",clicker:get_player_name())
 	end
 	inv:set_stack("main", i,nil)
@@ -105,7 +108,8 @@ end
 
 aliveai.invadd=function(self,add,num,nfeedback)
 -- inventory
-	if not (add and num) or add=="" or num=="" then return self end
+	if not (add and num) or add=="" or num=="" or add=="air" then return self end
+	if num>1 then self.mood=self.mood+1 end
 
 	if self.inv[add] then
 		self.inv[add]=self.inv[add]+num
@@ -149,7 +153,7 @@ aliveai.invadd=function(self,add,num,nfeedback)
 end
 
 aliveai.invhave=function(self,name,n,getnum)
-		local group=aliveai.namecut(name,true)
+		local group=name
 		local count=0
 		if group~=name then-- only for namecuts
 			for nm, s in pairs(self.inv) do
@@ -192,8 +196,8 @@ aliveai.newneed=function(self,item,num,search,type)
 	if item=="default:chest"			then search="default:chest" type="node" end
 	if item=="default:chest_locked"		then search="default:chest_locked" type="node" end
 	if item=="default:glass"			then search="group:sand" type="node" end
-	if item=="w"				then search="group:tree" type="node" end
-	if item=="s" or item=="stone"		then item="default:cobble" search="group:stone" type="node" end
+	if item=="default:wood"			then search="group:tree" type="node" end
+	if item=="default:stone"			then item="default:cobble" search="group:stone" type="node" end
 	if item=="default:bush_stem"		then search="group:tree" item="default:wood" type="node" end
 	if item=="default:acacia_bush_stem"		then search="group:tree" item="default:wood" type="node" end
 	if item=="default:iron_lump"			then item="default:steel_ingot" end
@@ -202,7 +206,7 @@ aliveai.newneed=function(self,item,num,search,type)
 	if item=="default:stone"			then search="group:stone" end
 	if item=="default:leaves"			then search="group:leaves" end
 	if item=="default:dirt"			then search="group:soil" end
-
+	if item=="air"				then return self end
 	self.need[item]={num=num,item=item,search=search,type=type}
 	
 	if not self.mine then
@@ -240,9 +244,8 @@ end
 
 aliveai.place=function(self,pos,name)
 	if minetest.registered_nodes[name] and aliveai.invhave(self,name,1) and minetest.get_node(pos) and minetest.registered_nodes[minetest.get_node(pos).name].buildable_to then
-		local name=aliveai.namecut(name,true)
+		local name=name
 		if self.inv[name] then
-
 			if minetest.registered_nodes[minetest.get_node(pos).name].after_place_node
 			or minetest.registered_nodes[minetest.get_node(pos).name].on_construct then
 				minetest.place_node(pos, {name=name})
@@ -311,7 +314,14 @@ aliveai.dig=function(self,pos)
 end
 
 aliveai.digdrop=function(pos)
-	local node=minetest.registered_nodes[minetest.get_node(pos).name]
+	local node
+	if minetest.registered_nodes[pos] then
+		node=minetest.registered_nodes[pos]
+	elseif pos and pos.x and pos.y and pos.z then
+		node=minetest.registered_nodes[minetest.get_node(pos).name]
+	else
+		return nil
+	end
 -- have drop
 	if node.drop then
 		local n=1
@@ -445,7 +455,7 @@ aliveai.crafting=function(self,name,norecraft,neednum)
 	if not norecraft then norecraft=0 end
 	norecraft=norecraft+1
 	if norecraft>5 then return self end
-	name=aliveai.namecut(name,true)
+	name=name
 	local c=minetest.get_craft_recipe(name)
 	local n=1
 	local relist1={}
@@ -454,7 +464,7 @@ aliveai.crafting=function(self,name,norecraft,neednum)
 	local output=c.output
 --if group or burn
 	if not c.output then 
-		local group=aliveai.namecut(name,true)
+		local group=name
 		output=group
 		local old=output
 		for i, s in pairs(self.inv) do
@@ -859,7 +869,7 @@ minetest.register_tool("aliveai:copy", {
 					for x=0,tox,x1 do
 						for z=0,toz,z1 do
 							local p={x=pos.x+x,y=pos.y+y,z=pos.z+z}
-							node=aliveai.namecut(minetest.get_node(p).name)
+							node=minetest.get_node(p).name
 							if last=="" then last=node end
 							if node~="a" then
 								if not need[node] then need[node]=0 end

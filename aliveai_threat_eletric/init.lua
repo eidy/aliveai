@@ -1,4 +1,4 @@
-﻿aliveai_threat_eletric={}
+aliveai_threat_eletric={}
 
 aliveai.create_bot({
 		drop_dead_body=0,

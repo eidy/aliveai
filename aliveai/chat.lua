@@ -1,4 +1,4 @@
-﻿aliveai.on_spoken_to=function(self,name,speaker,msg)
+aliveai.on_spoken_to=function(self,name,speaker,msg)
 	aliveai.showstatus(self,"spoken to: " .. msg)
 	local player=minetest.get_player_by_name(speaker)
 
@@ -7,10 +7,26 @@
 	end
 	if player==nil then return self end
 	local known=aliveai.getknown(self,player)
-
-	if self.temper==0 and known~="fight" and known~="fly" and string.find(msg,"come")~=nil then
-		if self.team=="Jezy" and player:is_player() then aliveai.sayrnd(self,"no") return self end
-
+	if known~="fight" and known~="fly" and string.find(msg,"come")~=nil then
+		if self.temper>1 or self.mood<-4 or aliveai.team(player)~=self.team then
+			local name=""
+			if aliveai.is_bot(player) then
+				name=player:get_luaentity().botname
+			elseif player:get_luaentity() then
+				name=player:get_luaentity().name
+			elseif player:is_player() then
+				name=player:get_player_name()
+			end
+			self.temper=self.temper+0.5
+			aliveai.sayrnd(self,"no",name,true)
+			if self.temper>2 then
+				self.fight=player
+			elseif self.temper>1 then
+				self.staring={name=name,step=1}
+				aliveai.lookat(self,player:getpos(),true)
+			end
+			return self
+		end
 		local pos=player:getpos()
 		if aliveai.distance(self,pos)>self.distance*2 then
 			aliveai.sayrnd(self,"no, too far")
@@ -29,16 +45,16 @@
 		end
 		if not self.zeal then self.zeal=1 end
 		self.zeal=self.zeal+1
+		self.mood=self.mood-1
 		self.come=player
 		aliveai.known(self,player,"come")
 		aliveai.sayrnd(self,"coming")
-
 	end
 	return self
 end
 
-aliveai.sayrnd=function(self,t,t2)
-	if t==nil or self.talking==0 then return self end
+aliveai.sayrnd=function(self,t,t2,nmood)
+	if (self.mood<1 and not nmood) or t==nil or self.talking==0 then return self end
 	local a
 	if t=="coming" then
 		a={"ok","what?","ok, but then?","so?"}
@@ -53,7 +69,7 @@ aliveai.sayrnd=function(self,t,t2)
 	elseif t=="got you" then
 		a={"eliminated","feel good, and stay there!","HA HA!","XD","I got him","Got ya!", "c ya","see ya","loser","u r 2 bad","lol","yeah","..."}
 	elseif t=="no" then
-		a={"no way!"}
+		a={"no way!","stop it!","go away"}
 	elseif t=="what are you staring at?" then
 		a={"what are you looking for?","waiting for something??","you are disgust me","you are interferes me","turn away your face!","???","?","-_-","what are you doing?","what you want?"}
 	elseif t=="murder!" then
@@ -61,9 +77,13 @@ aliveai.sayrnd=function(self,t,t2)
 	elseif t=="its dead!" then
 		a={"ohh a corpse","what happend here?","cool!","um?","something went wrong, please try again","hey look!","?","en of the life","Fail!","ugly","this is crazy!"}
 	elseif t=="beautiful weather" then
-		a={"this is hard!","borring","monster?","im hungry","i need a home","i need " .. self.lastitem_name,"cant find " .. self.lastitem_name,"just 1 more","thats cool","im alive","hey, can someone give me " .. self.lastitem_count .." " .. self.lastitem_name .."s?","this is creepy",":D","lol",":)",":@","...",":(",":/",".","hey you","can you meet at " .. math.random(1,24) ..":" .. math.random(0,59) .." ?",aliveai.genname(),aliveai.genname() .." " ..aliveai.genname(),"i just have " .. self.lastitem_count,"anyone have ".. self.lastitem_name .."?","k","no","zzz","did someone hear that?"}
+		a={"this is hard!","borring","monster?","im hungry","i need a home","i need " .. self.lastitem_name,"cant find " .. self.lastitem_name,"just 1 more","thats cool","im alive","hey, can someone give me " .. self.lastitem_count .." " .. self.lastitem_name .."?","this is creepy",":D","lol",":)",":@","...",":(",":/",".","hey you","can you meet at " .. math.random(1,24) ..":" .. math.random(0,59) .." ?",aliveai.genname(),aliveai.genname() .." " ..aliveai.genname(),"i just have " .. self.lastitem_count,"anyone have ".. self.lastitem_name .."?","k","no","zzz","did someone hear that?"}
 	elseif t=="AHHH" then
-		a={"aaaaaaaaa","ooooo","hhaaaaa","waaaaa","njaaaaa","?","?????","!??","DOH"}
+		a={"aaaaaaaaa","ooooo","hhaaaaa","waaaaa","njaaaaa","?","?????","!??","DOH","Hey im flying!","WEEEE"}
+	elseif t=="Hey, im flying!" then
+		a={"Hej, hey im flying!","whoo!?","weeeee","look at me, im flying!","cool","help!","im afraid of heights!","plz let me down!","aaaa"}
+	elseif t=="its flying!" then
+		a={"Hej, its flying!","i want to fly!","this guy is flying!","look","cool","","im afraid of heights!","plz let me down!","aaaa"}
 	end
 	if not a then
 		aliveai.say(self,t)

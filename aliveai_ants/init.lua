@@ -1,4 +1,4 @@
-﻿aliveai_ants={max=20}
+aliveai_ants={max=20}
 
 aliveai_ants.set_color=function(self)
 	local c=minetest.get_meta(self.home):get_string("color")

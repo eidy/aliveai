@@ -1,18 +1,3 @@
-﻿
-aliveai.namecut=function(name,group)-- return name to cut or cut to group
--- to cut
-	if name=="air" or name==nil then return "a" end
-	if not group then
-		if minetest.get_item_group(name, "wood")>0 or name=="wood" then return "w" end
-		if minetest.get_item_group(name, "stone")>0 or name=="stone" then return "s" end
-		return name
-	end
--- cut to group
-	if name=="w" or name=="group:wood" then name="wood" end
-	if name=="s" or name=="group:stone" then name="stone" end
-	return name
-end
-
 aliveai.generate_house=function(self)
 	local gen=true
 	if self.x and self.y and self.z and not self.aliveai then
@@ -21,14 +6,14 @@ aliveai.generate_house=function(self)
 		aliveai.showstatus(self,"generate house")
 	end
 --materials
+
+		local base_matreals={"default:wood","default:stone"}
+
 		local build_able=aliveai.random(1,aliveai.get_everything_to_build_chance)==1
-		local wall=aliveai.standard[aliveai.random(1,#aliveai.standard)]
-		local floor=aliveai.standard[aliveai.random(1,#aliveai.standard)]
+		local wall=base_matreals[math.random(1,#base_matreals)]
+		local floor=base_matreals[math.random(1,#base_matreals)]
 		local window=aliveai.windows[aliveai.random(1,#aliveai.windows)]
 		local furn_len=#aliveai.furnishings
-
-		wall=aliveai.namecut(wall,true)
-		floor=aliveai.namecut(floor,true)
 -- random materials from near stuff
 		if math.random(1,2)==1 then
 			local pos
@@ -133,14 +118,13 @@ aliveai.generate_house=function(self)
 					else
 						node="air"
 					end
-
+					if not node then node="" end
 					if not gen then
 						nodes=""
 						minetest.set_node({x=self.x+x,y=self.y+y,z=self.z+z},{name=node})
 					end
-					node=aliveai.namecut(node)	
 					if last=="" then last=node end
-					if node~="a" then
+					if node~="air" then
 						if not need[node] then need[node]=0 end
 						need[node]=need[node]+1	
 					end
@@ -243,7 +227,11 @@ aliveai.showstatus=function(self,t,c)
 		minetest.after(2, function(self,del)
 			if self and self.object then
 				if self.delstatus==del then
-					self.object:set_properties({nametag=self.botname,nametag_color="#ffffff"})
+					if self.namecolor=="" then
+						self.object:set_properties({nametag="",nametag_color=""})
+					else
+						self.object:set_properties({nametag=self.botname,nametag_color="#" .. self.namecolor})
+					end
 				end
 			end
 		end, self,del)
@@ -301,6 +289,12 @@ minetest.register_on_player_receive_fields(function(player, form, pressed)
 				if n==nil then n=1 end
 				meta:set_int("n",n)
 			end
+			if pressed.team then
+				meta:set_string("team",pressed.team)
+			end
+			if pressed.color then
+				meta:set_string("color",pressed.color)
+			end
 			if pressed.time then
 				local t=tonumber(pressed.time)
 				if t==nil or t<2 then t=2 end
@@ -338,14 +332,18 @@ aliveai.spawnerform=function(player,pos)
 	local n=meta:get_int("n")
 	local bot=meta:get_string("bot")
 	local time=meta:get_string("t")
+	local team=meta:get_string("team")
+	local color=meta:get_string("color")
 
 	if not aliveai.spawneruser then aliveai.spawneruser={} end
 	aliveai.spawneruser[player:get_player_name()]=pos
+
 	local gui=""
 	local nn=1
 	local nn_n=0
 	local list="random_npc"
 	local c=""
+
 	local but="item_image_button[2.7,0.5;1,1;;show;]"
 		if bot=="" then
 			bot=""
@@ -363,7 +361,7 @@ aliveai.spawnerform=function(player,pos)
 	end
 
 	gui=""
-	.."size[3.5,2]"
+	.."size[3.5,2.5]"
 	.."tooltip[n;Spawn when there are less bots then...]"
 	.."field[0,0;1.5,1;n;;" .. n .."]"
 	.."tooltip[time;Timer]"
@@ -371,9 +369,13 @@ aliveai.spawnerform=function(player,pos)
 	.."dropdown[-0.2,0.5;3,1;bot;" .. list.. ";" .. nn_n .."]"
 	.. but
 	.."button_exit[2.5,-0.3;1.3,1;set;Set]"
+	.."tooltip[team;Team: set team name, or leave empty for default teams]"
+	.."field[0,1.5;1.5,1;team;;" .. team .."]"
+	.."tooltip[color;Nametag color (e.g c50032) (RedGreenBlue (RRGGBB)]"
+	.."field[1.5,1.5;1.5,1;color;;" .. color .."]"
 	if aliveai.mesecons then
 		local mese=meta:get_int("mese")
-		gui=gui .."dropdown[-0.2,1.5;4,1;mese;Mesecons...,send_on_spawn,spawn_on_send,send_on_reach_number,send_on_reach_no_spawn;" .. mese .."]"
+		gui=gui .."dropdown[-0.2,2;4,1;mese;Mesecons...,send_on_spawn,spawn_on_send,send_on_reach_number,send_on_reach_no_spawn;" .. mese .."]"
 	end
 	minetest.after((0.1), function(gui)
 		return minetest.show_formspec(player:get_player_name(), "aliveai.spawnerform",gui)
@@ -404,6 +406,8 @@ minetest.register_node("aliveai:spawner", {
 		local meta = minetest.get_meta(pos)
 		local name=placer:get_player_name() or ""
 		meta:set_string("owner",name)
+		meta:set_string("team",aliveai.default_team)
+		meta:set_string("color","ffffff")
 		meta:set_string("infotext", "Spawner by " .. name)
 		local meta=minetest.get_meta(pos)
 		meta:set_int("n",1)
@@ -417,6 +421,8 @@ minetest.register_node("aliveai:spawner", {
 		local n=meta:get_int("n")
 		local bot=meta:get_string("bot")
 		local mese=meta:get_int("mese")
+		local team=meta:get_string("team")
+		local color=meta:get_string("color")
 		if bot=="random_npc" then
 			local a=true
 			local y=0
@@ -433,7 +439,11 @@ minetest.register_node("aliveai:spawner", {
 		if n>aliveai.active_num then
 			meta:set_int("reach",0) 
 			if aliveai.mesecons and mese==5 then return true end
-			minetest.add_entity({x=pos.x,y=pos.y+1,z=pos.z}, aliveai.registered_bots[bot].bot):setyaw(math.random(0,6.28))
+			local b=minetest.add_entity({x=pos.x,y=pos.y+1,z=pos.z}, aliveai.registered_bots[bot].bot)
+			b:setyaw(math.random(0,6.28))
+			if team~="" then b:get_luaentity().team=meta:get_string("team") end
+			b:set_properties({nametag=b:get_luaentity().botname,nametag_color="#" ..  color})
+			b:get_luaentity().namecolor=color
 			if aliveai.mesecons and mese==2 then mesecon.receptor_on(pos) end
 		elseif aliveai.mesecons and mese==4 and meta:get_int("reach")==0 then
 			meta:set_int("reach",1)
@@ -461,6 +471,8 @@ minetest.register_node("aliveai:spawner", {
 			local mese=meta:get_int("mese")
 			local bot=meta:get_string("bot")
 			local n=meta:get_int("n")
+			local team=meta:get_string("team")
+			local color=meta:get_string("color")
 			if bot=="random_npc" then
 				local a=true
 				local y=0
@@ -474,7 +486,11 @@ minetest.register_node("aliveai:spawner", {
 				pos.y=pos.y+y
 			end
 			if aliveai.registered_bots[bot] and n>aliveai.active_num and mese==3 then
-				minetest.add_entity({x=pos.x,y=pos.y+1,z=pos.z}, aliveai.registered_bots[bot].bot):setyaw(math.random(0,6.28))
+				local b=minetest.add_entity({x=pos.x,y=pos.y+1,z=pos.z}, aliveai.registered_bots[bot].bot)
+				b:setyaw(math.random(0,6.28))
+				if team~="" then b:get_luaentity().team=meta:get_string("team") end
+				b:set_properties({nametag=b:get_luaentity().botname,nametag_color="#" ..  color})
+				b:get_luaentity().namecolor=color
 			end
 			return false
 		end,
