@@ -1,3 +1,4 @@
+aliveai_massdestruction={}
 minetest.register_craft({
 	output = "aliveai_massdestruction:walking_bomb 3",
 	recipe = {
@@ -31,6 +32,148 @@ minetest.register_craftitem("aliveai_massdestruction:walking_bomb", {
 		return itemstack
 	end,
 })
+
+if aliveai_threat_eletric then
+
+minetest.register_tool("aliveai_massdestruction:core", {
+	description = "Uranium core",
+	inventory_image = "aliveai_massdestruction_core.png",
+	range = 15,
+	on_use=function(itemstack, user, pointed_thing)
+		if user:get_luaentity() then user=user:get_luaentity() end
+		local typ=pointed_thing.type
+		local pos1=user:getpos()
+		pos1.y=pos1.y+1.5
+		local pos2
+		if typ=="object" then
+			pos2=pointed_thing.ref:getpos()
+		elseif typ=="node" then
+			pos2=pointed_thing.under
+		elseif typ=="nothing" then
+			local dir
+			if user:get_luaentity() then
+				if user:get_luaentity().aliveai and user:get_luaentity().fight then
+					local dir=aliveai.get_dir(user:get_luaentity(),user:get_luaentity().fight)
+					pos2={x=pos1.x+(dir.x*30),y=pos1.y+(dir.y*30),z=pos1.z+(dir.z*30)}
+				else
+					pos2=aliveai.pointat(user:get_luaentity(),30)
+				end
+			else
+				local dir=user:get_look_dir()
+				pos2={x=pos1.x+(dir.x*30),y=pos1.y+(dir.y*30),z=pos1.z+(dir.z*30)}
+			end
+		else
+			return itemstack
+		end
+		local d=math.floor(aliveai.distance(pos1,pos2)+0.5)
+		local dir={x=(pos1.x-pos2.x)/-d,y=(pos1.y-pos2.y)/-d,z=(pos1.z-pos2.z)/-d}
+		local p1=pos1
+		for i=0,d,1 do
+			p1={x=pos1.x+(dir.x*i),y=pos1.y+(dir.y*i),z=pos1.z+(dir.z*i)}
+			if minetest.registered_nodes[minetest.get_node(p1).name] and minetest.registered_nodes[minetest.get_node(p1).name].walkable then
+				break
+			end
+		end
+
+		if p1.x~=p1.x or p1.y~=p1.y or p1.z~=p1.z then
+			return itemstack
+		end
+
+		aliveai_massdestruction.uran_explode(p1,4)
+		return itemstack
+	end,
+})
+
+
+aliveai.create_bot({
+		drop_dead_body=0,
+		attack_players=1,
+		name="uranium",
+		team="nuke",
+		texture="aliveai_massdestruction_uranium.png",
+		attacking=1,
+		talking=0,
+		light=0,
+		building=0,
+		escape=0,
+		type="monster",
+		dmg=19,
+		hp=1000,
+		name_color="",
+		coming=0,
+		smartfight=0,
+		visual_size={x=2,y=1.5},
+		collisionbox={-0.7,-1.5,-0.7,0.7,1.2,0.7},
+		start_with_items={["default:mese_crystal"]=4,["aliveai_massdestruction:core"]=1},
+		spawn_on={"group:sand","default:dirt_with_grass","default:dirt_with_dry_grass","default:gravel"},
+		attack_chance=5,
+		on_spawn=function(self)
+			self.hp2=self.object:get_hp()
+		end,
+		on_load=function(self)
+			self.hp2=self.object:get_hp()
+		end,
+	on_step=function(self,dtime)
+		if math.random(1,20)==1 then
+			local np=minetest.find_node_near(self.object:getpos(), 3,{"group:flammable"})
+			if np and not minetest.is_protected(np,"") then
+				minetest.place_node(np,{name="aliveai_massdestruction:fire"})
+			end
+		end
+
+
+		if self.fight then
+			if math.random(1,20)==1 and aliveai.distance(self,self.fight)>self.arm then
+				self.blowing=1
+				aliveai_nitroglycerine.explode(self.fight:getpos(),{
+					radius=3,
+					set="air",
+					place={"aliveai_massdestruction:fire","aliveai_massdestruction:fire","air","air","air"}
+				})
+			elseif math.random(1,10)==1 then
+				for _, ob in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), self.distance)) do
+					if not (aliveai.same_bot(self,ob) and aliveai.team(ob)=="nuke") then
+						local pos=ob:getpos()
+						aliveai_threat_eletric.lighthit(2,ob)
+						local node=minetest.get_node(ob:getpos()).name
+						if minetest.registered_nodes[node] and minetest.registered_nodes[node].walkable==false and not minetest.is_protected(np,"") then
+							minetest.set_node(pos,{name="aliveai_massdestruction:fire"})
+						end
+					end
+				end
+			end
+
+		end
+	end,
+	on_punched=function(self,puncher,h)
+		if self.blowing or self.hp2-self.hp<10 then
+			self.object:set_hp(self.hp2)
+			self.hp=self.hp2
+			self.blowing=nil
+			if aliveai.team(puncher)~="nuke" then
+				local p=puncher:getpos()
+				local node=minetest.get_node(p).name
+				if minetest.registered_nodes[node] and minetest.registered_nodes[node].walkable==false and not minetest.is_protected(p,"") then
+					minetest.set_node(p,{name="aliveai_massdestruction:fire"})
+				end
+				aliveai_threat_eletric.lighthit(2,puncher)
+			end
+			return self
+		end
+		self.hp2=self.hp
+	end,
+	on_death=function(self)
+		if not self.ex then
+			self.ex=1
+			local pos=self.object:getpos()
+			if not pos then return end
+			aliveai_massdestruction.uran_explode(pos,10,self)
+			minetest.set_node(pos,{name="aliveai_massdestruction:source"})
+		end
+		return self
+	end,
+})
+end
 
 aliveai.create_bot({
 		drop_dead_body=0,
@@ -72,15 +215,16 @@ aliveai.create_bot({
 				minetest.add_entity({x=pos.x+math.random(-5,5),y=pos.y+math.random(2,5),z=pos.z+math.random(-5,5)}, "aliveai_massdestruction:bomb")
 			end
 			aliveai_nitroglycerine.explode(pos,{
-			radius=2,
-			set="air",
-			drops=0,
-			place={"air","air"}
+				radius=2,
+				set="air",
+				drops=0,
+				place={"air","air"}
 			})
 		end
 		return self
 	end,
 })
+
 
 minetest.register_entity("aliveai_massdestruction:bomb",{
 	hp_max = 9000,
@@ -113,8 +257,6 @@ minetest.register_entity("aliveai_massdestruction:bomb",{
 		if self.time<0.1 then return self end
 		self.last_y=v.y
 		self.time=0
-
-
 		if not self.expl then
 			for _, ob in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), 2)) do
 				local en=ob:get_luaentity()
@@ -244,3 +386,198 @@ minetest.register_entity("aliveai_massdestruction:bomb2",{
 	aliveaibomb=1,
 	team="bomb"
 })
+
+
+
+minetest.register_node("aliveai_massdestruction:source", {
+	description = "Uranium source",
+	drawtype = "liquid",
+	tiles = {
+		{name = "aliveai_massdestruction_uran.png",
+			animation = {type = "vertical_frames",aspect_w = 16,aspect_h = 16,length = 2.0,},
+		},
+	},
+	special_tiles = {
+		{
+			name = "aliveai_massdestruction_uran.png",
+			animation = {type = "vertical_frames",aspect_w = 16,aspect_h = 16,length = 2.0,},
+			backface_culling = false,
+		},},
+	alpha = 220,
+	paramtype = "light",
+	light_source = 15,
+	walkable = false,
+	pointable = false,
+	diggable = false,
+	buildable_to = true,
+	is_ground_content = false,
+	drop = "",
+	drowning = 1,
+	liquidtype = "source",
+	liquid_alternative_flowing = "aliveai_massdestruction:flowing",
+	liquid_alternative_source = "aliveai_massdestruction:source",
+	liquid_viscosity = 0,
+	damage_per_second = 19,
+	post_effect_color = {a = 150, r = 150, g = 50, b = 190},
+	groups = {aileuran=1,igniter=1, liquid = 3, puts_out_fire = 1,not_in_creative_inventory=1},
+})
+
+minetest.register_node("aliveai_massdestruction:flowing", {
+	description = "Uranium flowing",
+	drawtype = "flowingliquid",
+	tiles = {"aliveai_massdestruction_uran.png"},
+	special_tiles = {
+		{
+			name = "aliveai_massdestruction_uran.png",
+			backface_culling = false,
+			animation = {type = "vertical_frames",aspect_w = 16,aspect_h = 16,length = 2.0}
+		},
+		{
+			name = "aliveai_massdestruction_uran.png",
+			backface_culling = true,
+			animation = {type = "vertical_frames",aspect_w = 16,aspect_h = 16,length = 2.0}
+		}
+	},
+	alpha = 190,
+	paramtype = "light",
+	light_source = 15,
+	paramtype2 = "flowingliquid",
+	walkable = false,
+	pointable = false,
+	diggable = false,
+	buildable_to = true,
+	is_ground_content = false,
+	drop = "",
+	drowning = 1,
+	liquidtype = "flowing",
+	liquid_alternative_flowing = "aliveai_massdestruction:flowing",
+	liquid_alternative_source = "aliveai_massdestruction:source",
+	liquid_viscosity = 2,
+	damage_per_second = 19,
+	post_effect_color = {a = 150, r = 150, g = 50, b = 190},
+	groups = {aileuran=1,igniter=1, liquid = 3, puts_out_fire = 1,not_in_creative_inventory = 1},
+})
+
+
+
+
+if aliveai_threat_eletric then
+
+minetest.register_abm({
+	nodenames = {"group:soil","group:sand","group:flammable","group:dig_immediate","group:water","group:flowers","group:oddly_breakable_by_hand"},
+	neighbors = {"group:aileuran"},
+	interval = 10,
+	chance = 4,
+	action = function(pos)
+		if minetest.is_protected(pos,"")==false then
+			minetest.set_node(pos, {name ="aliveai_massdestruction:fire"})
+		end
+	end,
+})
+
+minetest.register_abm({
+	nodenames = {"aliveai_massdestruction:fire","aliveai_massdestruction:source"},
+	interval = 10,
+	chance = 4,
+	action = function(pos)
+		if minetest.is_protected(pos,"")==false then
+			minetest.set_node(pos, {name ="air"})
+		end
+	end,
+})
+
+minetest.register_abm({
+	nodenames = {"group:aileuran"},
+	interval = 10,
+	chance = 10,
+	action = function(pos)
+		if math.random(1,10)~=1 then return end
+		for i, ob in pairs(minetest.get_objects_inside_radius(pos, 15)) do
+			local node=minetest.get_node(ob:getpos()).name
+			if aliveai.team(ob)~="nuke" and node~="aliveai_massdestruction:fire" and minetest.registered_nodes[node] and minetest.registered_nodes[node].walkable==false then
+				aliveai_threat_eletric.lighthit(2,ob)
+				minetest.set_node(ob:getpos(), {name ="aliveai_massdestruction:fire"})
+			end
+		end
+		local np=minetest.find_node_near(pos,15,{"group:soil","group:sand","group:flammable","group:dig_immediate","group:flowers","group:oddly_breakable_by_hand"})
+		if np~=nil then
+			minetest.set_node(np, {name ="aliveai_massdestruction:fire"})
+		end
+	end,
+})
+
+minetest.register_node("aliveai_massdestruction:fire", {
+	description = "Uranium fire",
+	inventory_image = "fire_basic_flame.png^[colorize:#aaff00aa",
+	drawtype = "firelike",
+	tiles = {
+		{
+			name = "fire_basic_flame_animated.png^[colorize:#aaff00aa",
+			animation = {
+				type = "vertical_frames",
+				aspect_w = 16,
+				aspect_h = 16,
+				length = 1
+			},
+		},
+	},
+	paramtype = "light",
+	light_source = 15,
+	walkable = false,
+	buildable_to = true,
+	sunlight_propagates = true,
+	damage_per_second = 7,
+	groups = {dig_immediate = 2,igniter=1,puts_out_fire = 1},
+	drop="",
+	on_construct=function(pos)
+		minetest.get_node_timer(pos):start(5)
+	end,
+	on_punch=function(pos, node, puncher, pointed_thing)
+		local p=puncher:getpos()
+		p={x=p.x,y=p.y+1,z=p.z}
+		local node=minetest.get_node(p).name
+		if minetest.registered_nodes[node] and minetest.registered_nodes[node].walkable==false then minetest.set_node(p, {name ="aliveai_massdestruction:fire"}) end
+	end,
+
+	on_timer=function (pos, elapsed)
+		for i, ob in pairs(minetest.get_objects_inside_radius(pos, 4)) do
+			local p=ob:getpos()
+			local node=minetest.get_node(p).name
+			if aliveai.team(ob)~="nuke" then 
+				if minetest.is_protected(p,"")==false and node~="aliveai_massdestruction:fire"
+				and minetest.registered_nodes[node] and minetest.registered_nodes[node].walkable==false then
+					minetest.set_node(p, {name ="aliveai_massdestruction:fire"})
+				end
+				aliveai_threat_eletric.lighthit(2,ob)
+			end
+		end
+
+		if math.random(3)==1 then
+			minetest.set_node(pos, {name ="air"})
+		else
+			minetest.sound_play("fire_small", {pos=pos, gain = 1.0, max_hear_distance = 5,})
+		end
+		return true
+	end
+})
+end
+
+
+
+aliveai_massdestruction.uran_explode=function(pos,d,self)
+	aliveai_nitroglycerine.explode(pos,{
+		radius=d,
+		set="air",
+		drops=0,
+		place={"aliveai_massdestruction:fire","aliveai_massdestruction:fire","air","air","air"}
+	})
+	for _, ob in ipairs(minetest.get_objects_inside_radius(pos, d*2)) do
+		if not ((self and aliveai.same_bot(self,ob)) and aliveai.team(ob)=="nuke") then
+			aliveai_threat_eletric.lighthit(2,ob)
+			local node=minetest.get_node(ob:getpos()).name
+			if minetest.registered_nodes[node] and minetest.registered_nodes[node].walkable==false then
+				minetest.set_node(pos,{name="aliveai_massdestruction:fire"})
+			end
+		end
+	end
+end

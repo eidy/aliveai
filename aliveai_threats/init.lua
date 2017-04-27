@@ -1,6 +1,7 @@
 aliveai_threats={c4={},debris={}}
 
 dofile(minetest.get_modpath("aliveai_threats") .. "/eyes.lua")
+dofile(minetest.get_modpath("aliveai_threats") .. "/sec.lua")
 
 aliveai.savedata.clone=function(self)
 	if self.clone then
@@ -44,7 +45,6 @@ minetest.register_craft({
 		{"default:steel_ingot","default:coal_lump","default:steel_ingot"},
 		{"default:steel_ingot","default:mese_crystal_fragment","default:steel_ingot"},
 		{"default:steel_ingot","default:copper_ingot","default:steel_ingot"},
-
 	}
 })
 

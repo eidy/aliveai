@@ -12,6 +12,7 @@ aliveai={
 	bots_delay2=0,
 	max_new_bots=10,
 	team_fight=true,
+	last_spoken_to="",
 	lifetimer=60,			--remove unbehavior none nps's
 	max_paths_per_s={timer=0,times=10,checked=0},
 	msg={},				--messages to bots
@@ -26,7 +27,7 @@ aliveai={
 				--staplefood database, add eatable stuff to the list, then can all other bots check if them have something like that to eat when they gets hurted
 	staplefood=		{["default:apple"]=2,["farming:bread"]=5,["mobs:meat"]=8,["mobs:meat_raw"]=3,["mobs:chicken_raw"]=2,["mobs:chicken_cooked"]=6,["mobs:chicken_egg_fried"]=2,["mobs:chicken_raw"]=2},
 	furnishings=		{"default:torch","default:chest","default:furnace","default:chest_locked","default:sign_wall_wood","default:sign_wall_steel","vessels:steel_bottle","vessels:drinking_glass","vessels:glass_bottle"},
-	basics=			{"default:desert_stone","default:sandstonebrick","default:sandstone","default:snowblock","default:ice","default:dirt","default:sand","default:desert_sand","default:silver_sand","default:stone","default:leaves"},
+	basics=			{"default:desert_stone","default:sandstonebrick","default:sandstone","default:snowblock","default:ice","default:sand","default:desert_sand","default:silver_sand","default:stone","default:leaves"},
 	windows=		{"default:glass"},
 	ladders=			{"default:ladder_wood","default:ladder_steel"},
 	tools_handler={		-- see extras.lua for use
@@ -34,6 +35,11 @@ aliveai={
 			try_to_craft=true,
 			use=false,
 			tools={"pick_wood","pick_stone","steel_steel","pick_mese","pick_diamond","sword_steel","sword_mese","sword_diamond"},
+		},
+		["aliveai"]={
+			try_to_craft=true,
+			use=false,
+			tools={"cudgel"},
 		}
 	},
 	nodes_handler={ --dig, mesecon_on, mesecon_off, punch, function

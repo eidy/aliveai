@@ -106,7 +106,7 @@ aliveai.create_bot({
 	on_spawn=function(self)
 		self.aliveai_ant=1
 		local pos=aliveai.roundpos(self.object:getpos())
-		pos.y=pos.y-2
+		--pos.y=pos.y-2
 		self.home=pos
 		self.team=pos.x .."_" .. pos.y .. "_" .. pos.z
 		if minetest.get_node(pos).name=="aliveai_ants:antbase" then
@@ -117,6 +117,14 @@ aliveai.create_bot({
 			self.antcount=m:get_int("count")
 			self.team=m:get_string("team")
 			aliveai_ants.set_color(self)
+			local ss=m:get_int("size")
+			local ssrnd={x=math.random(-1,1)*ss,z=math.random(-1,1)*ss}
+			local ssp={x=self.home.x+ssrnd.x,y=self.home.y,z=self.home.z+ssrnd.z}
+			p=aliveai.creatpath(self,self.home,ssp)
+			if p then
+				self.antdig=""
+				self.path=p
+			end
 			return self
 		end
 		local node=minetest.registered_nodes[minetest.get_node(pos).name]
@@ -125,7 +133,6 @@ aliveai.create_bot({
 			local en=ob:get_luaentity()
 			if en and en.aliveai_ant and aliveai.get_bot_name(ob)~=self.botname then return self end
 		end
-		if minetest.find_node_near(pos, 20,"aliveai_ants:antbase") then return self end
 		minetest.set_node(pos,{name="aliveai_ants:antbase"})
 		self.home=pos
 		
@@ -140,7 +147,7 @@ aliveai.create_bot({
 	on_step=function(self,dtime)
 
 		if self.path and math.random(1,20)==1 then
-			for _, ob in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), 0.5)) do
+			for _, ob in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), 1)) do
 				local en=ob:get_luaentity()
 				if en and en.aliveai_ant and aliveai.get_bot_name(ob)~=self.botname then
 					aliveai.jump(self)
@@ -152,7 +159,7 @@ aliveai.create_bot({
 		if self.antdig and self.path then
 			aliveai.path(self)
 			if not self.path or self.done=="path" then
-				local n=aliveai.digdrop( self.antdig)
+				local n=aliveai.digdrop(self.antdig)
 				if n and n~="" then
 					self.fight=minetest.add_item(self.antdig, n.name .." ".. n.n)
 					minetest.set_node(self.antdig,{name="air"})
@@ -193,6 +200,14 @@ aliveai.create_bot({
 							aliveai_ants.gen_hill(self)
 						else
 							m:set_int("s",s)
+						end
+						local ss=m:get_int("size")
+						local ssrnd={x=math.random(-1,1)*ss,z=math.random(-1,1)*ss}
+						local ssp={x=self.home.x+ssrnd.x,y=self.home.y,z=self.home.z+ssrnd.z}
+						p=aliveai.creatpath(self,self.home,ssp)
+						if p then
+							self.antdig=""
+							self.path=p
 						end
 					end
 				end

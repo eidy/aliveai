@@ -632,7 +632,7 @@ aliveai.rndwalk=function(self,toogle)
 	end
 -- normal rnd
 
-	if math.random(1,200)==1 then aliveai.sayrnd(self,"beautiful weather") end
+	if math.random(1,200)==1 then aliveai.sayrnd(self,"mine") end
 	if rnd==0 then
 		aliveai.lookat(self,math.random(0,6.28),true)
 		aliveai.stand(self)
@@ -702,6 +702,23 @@ aliveai.rndwalk=function(self,toogle)
 		end
 	elseif rnd<4 then
 		aliveai.lookat(self,math.random(0,6.28),true,true)
+	elseif self.talking==1 and rnd==5 and math.random(1,20)==1 then
+		aliveai.stand(self)
+		local rndpos
+		local obb
+		local d=99
+		for _, ob in ipairs(minetest.get_objects_inside_radius(self.object:getpos(), self.distance/2)) do
+			if ob and ob:getpos() and aliveai.visiable(self,ob) then
+				if d>aliveai.distance(self,ob:getpos()) and not aliveai.same_bot(self,ob) then
+					rndpos=ob:getpos()
+					obb=ob
+				end
+				if math.random(1,3)==1 then break end
+			end
+		end
+		if not obb then return end
+		aliveai.lookat(self,rndpos)
+		aliveai.rnd_talk_to(self,obb)
 	end
 end
 

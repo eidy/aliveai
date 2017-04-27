@@ -22,13 +22,18 @@ aliveai.default_team="Sam"
 
 aliveai.staplefood=				{["default:apple"]=2,["farming:bread"]=5,["mobs:meat"]=8,["mobs:meat_raw"]=3,["mobs:chicken_raw"]=2,["mobs:chicken_cooked"]=6,["mobs:chicken_egg_fried"]=2,["mobs:chicken_raw"]=2,["mobs:pork_raw"]=4,["mobs:pork_cooked"]=8}
 aliveai.furnishings=				{"default:torch","default:chest","default:furnace","default:chest_locked","default:sign_wall_wood","default:sign_wall_steel","vessels:steel_bottle","vessels:drinking_glass","vessels:glass_bottle"}
-aliveai.basics=				{"default:desert_stone","default:sandstonebrick","default:sandstone","default:snowblock","default:ice","default:dirt","default:sand","default:desert_sand","default:silver_sand","default:stone","default:leaves"}
+aliveai.basics=				{"default:desert_stone","default:sandstonebrick","default:sandstone","default:snowblock","default:ice","default:sand","default:desert_sand","default:silver_sand","default:stone","default:leaves"}
 aliveai.windows=				{"default:glass"}
 aliveai.ladders=				{"default:ladder_wood","default:ladder_steel"}
 aliveai.tools_handler["default"]={			-- see extras.lua for use
 		try_to_craft=true,
 		use=false,
 		tools={"pick_wood","pick_stone","steel_steel","pick_mese","pick_diamond","sword_steel","sword_mese","sword_diamond"},
+}
+aliveai.tools_handler["aliveai"]={
+			try_to_craft=true,
+			use=false,
+			tools={"cudgel"},
 }
 aliveai.nodes_handler={			-- dig, mesecon_on, mesecon_off, punch, function
 	["default:apple"]="dig",["aliveai_ants:antbase"]="dig",["tnt:tnt"]="dig",["tnt:tnt_burning"]="dig",["fire:basic_flame"]="dig",
@@ -56,6 +61,19 @@ minetest.register_craft({			--punch bot from another team to become their member
 	}
 })
 
+minetest.register_craft({			--punch bot from another team to become their member
+	output = "aliveai:cudgel",
+	recipe = {
+		{"","default:stick"},
+		{"","default:stick"},
+	}
+})
+
+minetest.register_craft({
+	type = "fuel",
+	recipe = "aliveai:cudgel",
+	burntime = 4,
+})
 
 if minetest.get_modpath("kpgmobs") then
 	aliveai.nodes_handler["default:grass_1"]={func=aliveai.drive_vehicle,item="kpgmobs:horseh1",pos={x=0,y=20,z=0}}

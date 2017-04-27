@@ -555,6 +555,16 @@ aliveai.come=function(self)
 -- meet
 					aliveai.stand(self)
 					aliveai.lookat(self,cpos)
+					if self.come_give then
+						if self.come:is_player() then
+							self.come:get_inventory():add_item("main", self.come_give .." "  .. self.come_give_num)
+						elseif aliveai.is_bot(self.come) then
+							aliveai.invadd(self.come:get_luaentity(),self.come_give,self.come_give_num)
+						end
+						aliveai.invadd(self,self.come_give,self.come_give_num*-1)
+						self.come_give=nil
+						self.come_give_num=nil
+					end
 					self.on_meet(self,self.zeal)
 					aliveai.showstatus(self,"meet",1)
 					aliveai.known(self,self.come,"")
@@ -1112,9 +1122,9 @@ aliveai.mine=function(self)
 				aliveai.showstatus(self,"need: " .. need.item .." " .. need.num .." search " ..need.search .." have: " .. aliveai.invhave(self,need.item,0,true).." time: " .. self.ignoreminetime)
 			if math.random(1,1000)==1 then
 				if need.search=="" then
-					aliveai.say(self,"i need " .. need.num.. " " .. need.item)
+					aliveai.say(self,"i need " .. need.item .. " " .. need.num)
 				else
-					aliveai.say(self,"i need " .. need.num.. " " .. need.item .." or " .. need.search)
+					aliveai.say(self,"i need " .. need.item .." " .. need.num.. " " ..  " or " .. need.search)
 				end
 			end
 			end
@@ -1155,7 +1165,9 @@ aliveai.mine=function(self)
 		end
 
 
-		if (self.done=="path" and aliveai.distance(self,self.mine.target)<self.arm) or (math.random(1,10)==1 and aliveai.distance(self,self.mine.target)<self.arm and aliveai.visiable(self,self.mine.target)) then
+		if aliveai.visiable(self,self.mine.target) and
+		(self.done=="path" and aliveai.distance(self,self.mine.target)<self.arm) or
+		(math.random(1,10)==1 and aliveai.distance(self,self.mine.target)<self.arm) then
 			self.time=self.otime
 			self.done=""
 			self.mine.status="dig"
@@ -1267,6 +1279,7 @@ aliveai.path=function(self)
 				return self
 			elseif self.path_timer>30 then
 				aliveai.jumping(self)
+				if not self.path_timer then self.path_timer=0 end
 				if self.path_timer>60 then
 					aliveai.exitpath(self)
 					aliveai.showstatus(self,"path timeout")

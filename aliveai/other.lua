@@ -6,12 +6,9 @@ aliveai.generate_house=function(self)
 		aliveai.showstatus(self,"generate house")
 	end
 --materials
-
-		local base_matreals={"default:wood","default:stone"}
-
 		local build_able=aliveai.random(1,aliveai.get_everything_to_build_chance)==1
-		local wall=base_matreals[math.random(1,#base_matreals)]
-		local floor=base_matreals[math.random(1,#base_matreals)]
+		local wall=aliveai.basics[math.random(1,#aliveai.basics)]
+		local floor=aliveai.basics[math.random(1,#aliveai.basics)]
 		local window=aliveai.windows[aliveai.random(1,#aliveai.windows)]
 		local furn_len=#aliveai.furnishings
 -- random materials from near stuff
@@ -388,6 +385,7 @@ minetest.register_node("aliveai:spawner", {
 	groups = {cracky = 2},
 	drawtype="nodebox",
 	paramtype="light",
+	walkable=false,
 	node_box = {
 		type = "fixed",
 		fixed = {
@@ -518,6 +516,23 @@ minetest.register_craftitem("aliveai:team_gift", {
 		end
 	end,
 })
+
+minetest.register_tool("aliveai:cudgel", {
+	description = "Wooden cudgel",
+	inventory_image = "default_stick.png^[colorize:#513204ff",
+	tool_capabilities = {
+		full_punch_interval = 0.5,
+		max_drop_level=0,
+		groupcaps={
+			snappy={times={[2]=1.4, [3]=0.3}, uses=105, maxlevel=0},
+			cracky = {times={[3]=20}, uses=2, maxlevel=1},
+		},
+		damage_groups = {fleshy=3},
+	},
+	groups = {flammable = 2,stick=1},
+	sound = {breaks = "default_tool_breaks"},
+})
+
 
 local paths={
 {0.2,"bubble.png^[colorize:#0000ffff"},

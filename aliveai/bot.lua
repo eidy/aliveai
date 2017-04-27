@@ -503,3 +503,27 @@ minetest.register_abm({
 })
 print("[aliveai] loaded: " .. def.mod_name ..":" .. def.name)
 end
+
+minetest.register_craftitem("aliveai:npcspawner", {
+	description = "Random npc spawner",
+	inventory_image ="aliveai_rnd.png",
+		on_place = function(itemstack, user, pointed_thing)
+			if pointed_thing.type=="node" then
+				local pos=aliveai.roundpos(pointed_thing.above)
+				local list={}
+				local ii=1
+				for i, v in pairs(aliveai.registered_bots) do
+					if v.type=="npc" then
+						list[ii]={y=v.spawn_y,name=v.name}
+						ii=ii+1
+					end
+				end
+				local bot=list[aliveai.random(1,ii)]
+				if not bot then return end
+				pos.y=pos.y+bot.y
+				minetest.add_entity(pos, aliveai.registered_bots[bot.name].bot):setyaw(math.random(0,6.28))
+				itemstack:take_item()
+			end
+			return itemstack
+		end,
+	})

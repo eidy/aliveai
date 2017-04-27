@@ -103,7 +103,7 @@ minetest.register_tool("aliveai_threat_eletric:core", {
 		if type=="object" then
 			pos2=pointed_thing.ref:getpos()
 		elseif type=="node" then
-			pos2=pointed_thing.above
+			pos2=pointed_thing.under
 		elseif type=="nothing" then
 			local dir
 			if user:get_luaentity() then
@@ -120,6 +120,9 @@ minetest.register_tool("aliveai_threat_eletric:core", {
 		else
 			return itemstack
 		end
+
+		local n=minetest.get_node(pos1).name
+		if minetest.registered_nodes[n] and minetest.registered_nodes[n].walkable then return end
 		aliveai_threat_eletric.lightning(pos1,pos2)
 
 	end,
@@ -130,7 +133,7 @@ minetest.register_tool("aliveai_threat_eletric:core", {
 	end
 })
 
-aliveai_threat_eletric.lighthit=function(level,ob,user)
+aliveai_threat_eletric.lighthit=function(level,ob)
 	local dmg=math.random(1,5)
 	local hp=ob:get_hp()
 	local en=0
@@ -142,11 +145,11 @@ aliveai_threat_eletric.lighthit=function(level,ob,user)
 		hp=hp-level
 		local time=math.random(1,10)*0.1
 		if ob:get_hp()<=0 then return false end
-		minetest.after((i*0.3)+time, function(ob,user)
-		if ob==nil or ob:get_hp()<=0 then return false end
-		ob:set_hp(ob:get_hp()-level)
-		if ob then ob:punch(ob,1, {full_punch_interval=1,damage_groups={fleshy=4}}, "default:bronze_pick") end
-		end, ob,user)
+		minetest.after((i*0.3)+time, function(ob,en)
+			if ob==nil or ob:get_hp()<=0 or (en==1 and not ob:get_luaentity()) then return false end
+			ob:set_hp(ob:get_hp()-level)
+			ob:punch(ob,1, {full_punch_interval=1,damage_groups={fleshy=4}})
+		end, ob,en)
 	if hp<=0 then return false end
 	end
 end

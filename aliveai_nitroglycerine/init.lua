@@ -1,5 +1,6 @@
 aliveai_nitroglycerine={}
 aliveai_nitroglycerine.explode=function(pos,node)
+	if not (pos and pos.x and pos.y and pos.z) then return end
 	if not node then node={} end
 
 	node.radius= node.radius or 3
@@ -10,6 +11,9 @@ aliveai_nitroglycerine.explode=function(pos,node)
 	node.drops=node.drops or 1
 	node.velocity=node.velocity or 1
 	node.hurt=node.hurt or 1
+	node.blow_nodes=node.blow_nodes or 1
+
+if node.blow_nodes==1 then
 
 	local nodes={}
 	if node.set~="" then node.set=minetest.get_content_id(node.set) end
@@ -65,7 +69,7 @@ aliveai_nitroglycerine.explode=function(pos,node)
 	vox:write_to_map()
 	vox:update_map()
 	vox:update_liquids()
-
+end
 
 if node.hurt==1 then
 	for _, ob in ipairs(minetest.get_objects_inside_radius(pos, node.radius*2)) do
